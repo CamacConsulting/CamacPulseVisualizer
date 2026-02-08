@@ -2,100 +2,98 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>CamacPulse | Enterprise Analytics</title>
+    <title>CamacPulse | Enterprise Intelligence</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
         :root { --teal: #41797e; --navy: #001935; --bg: #f4f7f9; --accent: #5aa4ab; }
         
-        body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--navy); margin: 0; padding-bottom: 100px; }
+        body { font-family: 'Inter', system-ui, sans-serif; background: var(--bg); color: var(--navy); margin: 0; transition: 0.3s; }
         
-        header { background: var(--navy); color: white; padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; }
+        /* Standard View Container */
         .container { max-width: 1200px; margin: 30px auto; padding: 0 20px; }
 
-        .panel { background: white; padding: 30px; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); }
-        
-        .upload-box { border: 2px dashed #cbd5e1; padding: 60px 40px; text-align: center; border-radius: 12px; background: #fafafa; cursor: pointer; transition: 0.3s; }
-        .upload-box:hover { background: #f0fdfa; border-color: var(--teal); }
+        /* FULL WINDOW CLASS - Triggered by the link */
+        body.full-window-active { background: white; }
+        body.full-window-active .container { max-width: 98% !important; margin: 10px auto !important; }
+        body.full-window-active header, body.full-window-active .upload-card-extra { display: none; }
+        body.full-window-active .main-panel { border: none; box-shadow: none; }
+        body.full-window-active canvas { height: 75vh !important; }
+
+        header { background: var(--navy); color: white; padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; }
+        .main-panel { background: white; padding: 30px; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); }
 
         #stats { display: none; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 25px; }
         .stat-card { background: var(--navy); color: white; padding: 20px; border-radius: 12px; text-align: center; }
         .stat-card div { font-size: 28px; font-weight: 800; color: var(--accent); }
 
         .controls { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 20px; background: #f8fafc; padding: 20px; border-radius: 10px; }
-        
-        canvas { width: 100%; height: 500px; display: block; margin-top: 20px; }
-
-        label { font-size: 11px; font-weight: bold; color: #64748b; text-transform: uppercase; }
-        select, input { width: 100%; padding: 10px; margin-top: 5px; border-radius: 6px; border: 1px solid #ddd; }
+        canvas { width: 100%; height: 500px; display: block; }
 
         .footer-nav { 
             position: fixed; bottom: 0; left: 0; width: 100%; 
-            background: var(--navy); padding: 25px 0; text-align: center; 
-            border-top: 4px solid var(--teal); z-index: 9999;
+            background: var(--navy); padding: 20px 0; text-align: center; 
+            border-top: 3px solid var(--teal); z-index: 9999;
         }
-        .footer-nav a { 
-            color: white; text-decoration: none; font-weight: 900; 
-            letter-spacing: 1.5px; font-size: 14px; text-transform: uppercase;
-        }
-        .footer-nav a:hover { color: var(--accent); }
+        .footer-nav a { color: white; text-decoration: none; font-weight: 800; cursor: pointer; text-transform: uppercase; font-size: 13px; }
+
+        .upload-zone { border: 2px dashed #cbd5e1; padding: 50px; text-align: center; border-radius: 12px; cursor: pointer; }
     </style>
 </head>
-<body>
+<body id="bodyTag">
 
 <header>
-    <div style="font-weight: 900; letter-spacing: 1px;">CAMAC<span style="color:var(--accent)">PULSE</span></div>
-    <div id="status" style="font-size: 10px; font-weight: bold; opacity: 0.6;">ENGINE READY</div>
+    <div style="font-weight: 900;">CAMAC<span style="color:var(--accent)">PULSE</span></div>
+    <div id="status" style="font-size: 11px; color: var(--accent);">READY</div>
 </header>
 
 <div class="container">
-    <div class="panel" id="uploadPanel">
-        <div class="upload-box" onclick="document.getElementById('fileIn').click()">
-            <h2 style="margin: 0 0 10px 0;">Intelligence Dashboard</h2>
-            <p style="color: #64748b;">Click to upload dataset and initialize predictive trajectory mapping.</p>
+    <div class="main-panel" id="uploadPanel">
+        <div class="upload-zone" onclick="document.getElementById('fileIn').click()">
+            <h2>Intelligence Dashboard</h2>
+            <p>Upload your Excel file to initialize analysis.</p>
             <input type="file" id="fileIn" accept=".xlsx, .xls, .csv" style="display:none">
         </div>
     </div>
 
     <div id="stats">
-        <div class="stat-card"><small>OPERATIONAL AVG</small><div id="vAvg">0</div></div>
-        <div class="stat-card"><small>MOMENTUM</small><div id="vTrend">---</div></div>
-        <div class="stat-card"><small>PREDICTIVE FORECAST</small><div id="vFore">0</div></div>
+        <div class="stat-card"><small>AVERAGE</small><div id="oAvg">0</div></div>
+        <div class="stat-card"><small>TREND</small><div id="oTrend">---</div></div>
+        <div class="stat-card"><small>FORECAST</small><div id="oFore">0</div></div>
     </div>
 
-    <div class="panel" id="mainApp" style="display:none">
+    <div class="main-panel" id="appInterface" style="display:none">
         <div class="controls">
-            <div><label>Temporal Axis</label><select id="selX" onchange="draw()"></select></div>
-            <div><label>Metric Volume</label><select id="selY" onchange="draw()"></select></div>
-            <div><label>Performance Target</label><input type="number" id="goal" oninput="draw()" placeholder="0.00"></div>
+            <div><label>X-Axis</label><select id="selX" onchange="draw()"></select></div>
+            <div><label>Y-Axis</label><select id="selY" onchange="draw()"></select></div>
+            <div><label>Goal</label><input type="number" id="goal" oninput="draw()"></div>
         </div>
-        <canvas id="pulseCanvas"></canvas>
+        <canvas id="chartCanvas"></canvas>
     </div>
 </div>
 
 <div class="footer-nav">
-    <a href="https://camacconsulting.tumblr.com/CamacPulseVisualizer" target="_blank">VIEW FULL WINDOW ↗</a>
+    <a onclick="toggleFullView()" id="viewLink">VIEW FULL WINDOW ↗</a>
 </div>
 
 <script>
-    let dataSet = [];
-    const fileIn = document.getElementById('fileIn');
-
-    fileIn.onchange = (e) => {
+    let rawData = [];
+    
+    // File Upload Logic
+    document.getElementById('fileIn').onchange = (e) => {
         const file = e.target.files[0];
-        if (!file) return;
         const reader = new FileReader();
         reader.onload = (f) => {
-            try {
-                const wb = XLSX.read(new Uint8Array(f.target.result), {type: 'array'});
-                dataSet = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]);
-                if(dataSet.length > 0) start();
-            } catch(err) { alert("Error: Please provide a valid Excel/CSV file."); }
+            const wb = XLSX.read(new Uint8Array(f.target.result), {type: 'array'});
+            rawData = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]);
+            if(rawData.length > 0) {
+                initApp();
+            }
         };
         reader.readAsArrayBuffer(file);
     };
 
-    function start() {
-        const keys = Object.keys(dataSet[0]);
+    function initApp() {
+        const keys = Object.keys(rawData[0]);
         const sx = document.getElementById('selX'), sy = document.getElementById('selY');
         sx.innerHTML = ''; sy.innerHTML = '';
         keys.forEach(k => { sx.add(new Option(k,k)); sy.add(new Option(k,k)); });
@@ -103,17 +101,33 @@
 
         document.getElementById('uploadPanel').style.display = 'none';
         document.getElementById('stats').style.display = 'grid';
-        document.getElementById('mainApp').style.display = 'block';
-        document.getElementById('status').innerText = "DATA ACTIVE";
+        document.getElementById('appInterface').style.display = 'block';
         draw();
     }
 
+    // THE FULL WINDOW TOGGLE
+    function toggleFullView() {
+        const body = document.getElementById('bodyTag');
+        const link = document.getElementById('viewLink');
+        
+        if(body.classList.contains('full-window-active')) {
+            body.classList.remove('full-window-active');
+            link.innerText = "VIEW FULL WINDOW ↗";
+        } else {
+            body.classList.add('full-window-active');
+            link.innerText = "EXIT FULL WINDOW ✕";
+        }
+        draw(); // Redraw to fill new width
+    }
+
     function draw() {
-        const canvas = document.getElementById('pulseCanvas'), ctx = canvas.getContext('2d');
+        const canvas = document.getElementById('chartCanvas'), ctx = canvas.getContext('2d');
+        if(!rawData.length) return;
+
         const xK = document.getElementById('selX').value, yK = document.getElementById('selY').value;
         const goal = parseFloat(document.getElementById('goal').value) || 0;
 
-        const pts = dataSet.map(d => ({
+        const pts = rawData.map(d => ({
             x: String(d[xK]),
             y: parseFloat(String(d[yK]).replace(/[^0-9.-]/g, ''))
         })).filter(p => !isNaN(p.y));
@@ -123,27 +137,28 @@
         ys.forEach((y,x) => { sX+=x; sY+=y; sXY+=x*y; sXX+=x*x; });
         const m = (n*sXY - sX*sY)/(n*sXX - sX*sX) || 0, b = (sY - m*sX)/n;
 
-        document.getElementById('vAvg').innerText = Math.round(ys.reduce((a,b)=>a+b,0)/n).toLocaleString();
-        document.getElementById('vFore').innerText = Math.round(m*n+b).toLocaleString();
-        document.getElementById('vTrend').innerText = m > 0 ? "Upward" : "Downward";
+        document.getElementById('oAvg').innerText = Math.round(ys.reduce((a,b)=>a+b,0)/n).toLocaleString();
+        document.getElementById('oFore').innerText = Math.round(m*n+b).toLocaleString();
+        document.getElementById('oTrend').innerText = m > 0 ? "Upward" : "Downward";
 
         const dpr = 2;
         canvas.width = canvas.offsetWidth * dpr; canvas.height = canvas.offsetHeight * dpr;
         ctx.scale(dpr, dpr);
         const w = canvas.offsetWidth, h = canvas.offsetHeight;
         
-        const pL = 80, pR = 250, pT = 60, pB = 100;
-        const max = Math.max(...ys, (m*n+b), goal) * 1.4;
+        const pL = 80, pR = 250, pT = 50, pB = 100;
+        const max = Math.max(...ys, (m*n+b), goal) * 1.3;
         const step = (w - pL - pR) / (n - 1 || 1);
 
         ctx.clearRect(0,0,w,h);
 
-        // Y Grid
-        ctx.strokeStyle = "#f1f5f9"; ctx.fillStyle = "#94a3b8"; ctx.font = "bold 10px sans-serif";
+        // Grid
+        ctx.strokeStyle = "#f1f5f9"; ctx.lineWidth = 1;
         for(let i=0; i<=5; i++) {
             const val = Math.round(max/5*i), y = (h-pB)-(val/max*(h-pB-pT));
             ctx.beginPath(); ctx.moveTo(pL, y); ctx.lineTo(w-pR, y); ctx.stroke();
-            ctx.textAlign = "right"; ctx.fillText(val.toLocaleString(), pL-15, y+4);
+            ctx.fillStyle = "#94a3b8"; ctx.font = "bold 10px sans-serif"; ctx.textAlign = "right";
+            ctx.fillText(val.toLocaleString(), pL-15, y+4);
         }
 
         // Line
@@ -156,14 +171,6 @@
         });
         ctx.stroke();
 
-        // Target Line
-        if(goal > 0) {
-            const gy = (h-pB)-(goal/max*(h-pB-pT));
-            ctx.strokeStyle = "#e11d48"; ctx.lineWidth = 2;
-            ctx.beginPath(); ctx.moveTo(pL, gy); ctx.lineTo(w-pR, gy); ctx.stroke();
-            ctx.fillStyle = "#e11d48"; ctx.textAlign="left"; ctx.fillText("TARGET", w-pR+10, gy+4);
-        }
-
         // Forecast
         const fy = (h-pB)-((m*n+b)/max*(h-pB-pT)), fx = pL+(n*step);
         ctx.setLineDash([5,5]); ctx.strokeStyle = "#94a3b8";
@@ -171,7 +178,7 @@
         ctx.lineTo(fx, fy); ctx.stroke();
         ctx.setLineDash([]);
         ctx.fillStyle = "var(--navy)"; ctx.beginPath(); ctx.arc(fx, fy, 6, 0, 7); ctx.fill();
-        ctx.font = "bold 12px sans-serif"; ctx.fillText("FORECAST", fx+15, fy+4);
+        ctx.fillText("FORECAST", fx+15, fy+5);
     }
 </script>
 </body>
