@@ -2,115 +2,178 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>CamacPulse | Professional Analytics</title>
+    <title>CamacPulseVisualizer | Total Fix</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
-        :root { --teal: #41797e; --navy: #001935; --accent: #5aa4ab; }
-        body { font-family: 'Segoe UI', sans-serif; background: #f4f7f9; color: var(--navy); margin: 0; }
-        header { background: var(--navy); color: white; padding: 20px 40px; display: flex; justify-content: space-between; align-items: center; }
-        .wrapper { max-width: 1400px; margin: 40px auto; padding: 0 20px; }
-        .panel { background: white; padding: 30px; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); }
-        .upload-box { border: 2px dashed #cbd5e1; padding: 100px 20px; text-align: center; border-radius: 12px; cursor: pointer; }
-        #stats { display: none; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 25px; }
-        .stat-card { background: var(--navy); color: white; padding: 20px; border-radius: 12px; text-align: center; }
-        .stat-card div { font-size: 32px; font-weight: 800; color: var(--accent); }
-        .controls { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 20px; background: #f8fafc; padding: 20px; border-radius: 10px; }
-        canvas { width: 100%; height: 60vh; display: block; }
-        label { font-size: 11px; font-weight: bold; color: #64748b; text-transform: uppercase; }
-        select, input { width: 100%; padding: 10px; margin-top: 5px; border-radius: 6px; border: 1px solid #ddd; }
+        :root { --teal: #41797e; --navy: #001935; --bg: #f8fafc; }
+        body { font-family: system-ui, sans-serif; background: var(--bg); color: var(--navy); margin: 0; padding-bottom: 120px; }
+        header { background: var(--navy); color: white; padding: 20px; text-align: center; border-bottom: 4px solid var(--teal); }
+        .container { max-width: 1300px; margin: 20px auto; padding: 0 20px; }
+        
+        /* The Upload Section - Simplified */
+        .upload-card { background: white; padding: 40px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); text-align: center; margin-bottom: 20px; }
+        input[type="file"] { padding: 10px; background: #eee; border-radius: 5px; cursor: pointer; }
+
+        /* Dashboard */
+        #statsDash { display: none; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 20px; }
+        .card { background: var(--navy); color: white; padding: 15px; border-radius: 10px; text-align: center; border-bottom: 4px solid var(--teal); }
+        .card div { font-size: 24px; font-weight: 800; color: #5aa4ab; }
+
+        .main-view { display: none; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.05); }
+        .ctrl-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; background: #f1f5f9; padding: 20px; border-radius: 10px; }
+        
+        /* CANVAS - Optimized for Full View */
+        canvas { width: 100%; height: 600px; margin-top: 20px; display: block; }
+
+        /* Navigation */
+        .nav-bar { position: fixed; bottom: 0; left: 0; width: 100%; background: var(--navy); padding: 20px 0; border-top: 4px solid var(--teal); text-align: center; z-index: 1000; }
+        .btn { background: var(--teal); color: white; padding: 12px 30px; border-radius: 25px; border: none; font-weight: 800; cursor: pointer; text-transform: uppercase; }
     </style>
 </head>
 <body>
 
-<header>
-    <div style="font-weight: 900; font-size: 22px;">CAMAC<span style="color:var(--accent)">PULSE</span></div>
-    <div style="font-size: 12px; opacity: 0.7;">FULL WORKSPACE MODE</div>
-</header>
+<header><strong>CAMACPULSE ANALYTICS</strong></header>
 
-<div class="wrapper">
-    <div class="panel" id="uploadPanel">
-        <div class="upload-box" onclick="document.getElementById('fIn').click()">
-            <h2 style="margin:0;">Initialize Full View</h2>
-            <p>Please re-upload your Excel or CSV file to begin analysis.</p>
-            <input type="file" id="fIn" accept=".xlsx, .xls, .csv" style="display:none">
-        </div>
+<div class="container">
+    <div class="upload-card" id="uploadPanel">
+        <h2 style="margin:0 0 15px 0;">Intelligence Import</h2>
+        <p>Select your Excel or CSV file to begin trajectory analysis</p>
+        <input type="file" id="filePicker" accept=".xlsx, .xls, .csv">
     </div>
 
-    <div id="stats">
-        <div class="stat-card"><small>AVERAGE</small><div id="oAvg">0</div></div>
-        <div class="stat-card"><small>TREND</small><div id="oTrend">---</div></div>
-        <div class="stat-card"><small>FORECAST</small><div id="oFore">0</div></div>
+    <div id="statsDash">
+        <div class="card">AVERAGE<div id="vAvg">0</div></div>
+        <div class="card">TREND<div id="vTrend">---</div></div>
+        <div class="card">FORECAST<div id="vFore">0</div></div>
     </div>
 
-    <div class="panel" id="app" style="display:none">
-        <div class="controls">
-            <div><label>Labels</label><select id="sX" onchange="draw()"></select></div>
-            <div><label>Values</label><select id="sY" onchange="draw()"></select></div>
-            <div><label>Target</label><input type="number" id="goal" oninput="draw()" placeholder="0"></div>
+    <div class="main-view" id="mainApp">
+        <div class="ctrl-row">
+            <div><label>Labels</label><select id="pickX" onchange="draw()"></select></div>
+            <div><label>Values</label><select id="pickY" onchange="draw()"></select></div>
+            <div><label>Target</label><input type="number" id="pickGoal" oninput="draw()" placeholder="0"></div>
         </div>
-        <canvas id="cvs"></canvas>
+        <canvas id="pulseCanvas"></canvas>
     </div>
 </div>
 
+<div class="nav-bar">
+    <button class="btn" onclick="window.open(window.location.href, '_blank')">View Full Window ↗</button>
+</div>
+
 <script>
-    let raw = [];
-    document.getElementById('fIn').onchange = (e) => {
+    const picker = document.getElementById('filePicker');
+    let dataSet = [];
+
+    // Check for saved data on load
+    window.addEventListener('load', () => {
+        const saved = sessionStorage.getItem('pulseData');
+        if (saved) {
+            dataSet = JSON.parse(saved);
+            startApp();
+        }
+    });
+
+    // Handle Upload
+    picker.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
         const reader = new FileReader();
         reader.onload = (f) => {
-            const wb = XLSX.read(new Uint8Array(f.target.result), {type: 'array'});
-            raw = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]);
-            if(raw.length > 0) init();
+            try {
+                const workbook = XLSX.read(new Uint8Array(f.target.result), {type: 'array'});
+                const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+                dataSet = XLSX.utils.sheet_to_json(firstSheet);
+                
+                if (dataSet.length > 0) {
+                    sessionStorage.setItem('pulseData', JSON.stringify(dataSet));
+                    startApp();
+                }
+            } catch(err) {
+                alert("Error: Please upload a standard Excel file.");
+            }
         };
-        reader.readAsArrayBuffer(e.target.files[0]);
-    };
+        reader.readAsArrayBuffer(file);
+    });
 
-    function init() {
-        const keys = Object.keys(raw[0]);
-        const sx = document.getElementById('sX'), sy = document.getElementById('sY');
+    function startApp() {
+        const keys = Object.keys(dataSet[0]);
+        const sx = document.getElementById('pickX'), sy = document.getElementById('pickY');
+        sx.innerHTML = ''; sy.innerHTML = '';
         keys.forEach(k => { sx.add(new Option(k,k)); sy.add(new Option(k,k)); });
         if(keys.length > 1) sy.selectedIndex = 1;
+
         document.getElementById('uploadPanel').style.display = 'none';
-        document.getElementById('stats').style.display = 'grid';
-        document.getElementById('app').style.display = 'block';
+        document.getElementById('statsDash').style.display = 'grid';
+        document.getElementById('mainApp').style.display = 'block';
         draw();
     }
 
     function draw() {
-        const canvas = document.getElementById('cvs'), ctx = canvas.getContext('2d');
-        const xK = document.getElementById('sX').value, yK = document.getElementById('sY').value;
-        const goal = parseFloat(document.getElementById('goal').value) || 0;
-        const pts = raw.map(d => ({ x: String(d[xK]), y: parseFloat(String(d[yK]).replace(/[^0-9.-]/g, '')) })).filter(p => !isNaN(p.y));
-        
-        // Regression logic for stats
+        const canvas = document.getElementById('pulseCanvas'), ctx = canvas.getContext('2d');
+        const xKey = document.getElementById('pickX').value, yKey = document.getElementById('pickY').value;
+        const goal = parseFloat(document.getElementById('pickGoal').value) || 0;
+
+        const pts = dataSet.map(d => ({
+            x: String(d[xKey]),
+            y: parseFloat(String(d[yKey]).replace(/[^0-9.-]/g, ''))
+        })).filter(p => !isNaN(p.y));
+
         const n = pts.length, ys = pts.map(p => p.y);
         let sX=0, sY=0, sXY=0, sXX=0;
         ys.forEach((y,x) => { sX+=x; sY+=y; sXY+=x*y; sXX+=x*x; });
         const m = (n*sXY - sX*sY)/(n*sXX - sX*sX) || 0, b = (sY - m*sX)/n;
 
-        document.getElementById('oAvg').innerText = Math.round(ys.reduce((a,b)=>a+b,0)/n).toLocaleString();
-        document.getElementById('oFore').innerText = Math.round(m*n+b).toLocaleString();
-        document.getElementById('oTrend').innerText = m > 0 ? "Up" : "Down";
+        document.getElementById('vAvg').innerText = Math.round(ys.reduce((a,b)=>a+b,0)/n).toLocaleString();
+        document.getElementById('vFore').innerText = Math.round(m*n+b).toLocaleString();
+        document.getElementById('vTrend').innerText = m > 0 ? "Upward" : "Downward";
 
-        canvas.width = canvas.offsetWidth * 2; canvas.height = canvas.offsetHeight * 2;
-        ctx.scale(2, 2);
-        const w = canvas.offsetWidth, h = canvas.offsetHeight, pL = 70, pR = 200, pT = 50, pB = 80;
-        const max = Math.max(...ys, (m*n+b), goal) * 1.3;
+        const dpr = 2;
+        canvas.width = canvas.offsetWidth * dpr; canvas.height = canvas.offsetHeight * dpr;
+        ctx.scale(dpr, dpr);
+        const w = canvas.offsetWidth, h = canvas.offsetHeight;
+        
+        // PADDING: Massive right margin (280px) to prevent cutoff
+        const pL = 80, pR = 280, pT = 100, pB = 100;
+        const max = Math.max(...ys, (m*n+b), goal) * 1.5; // Extra height
         const step = (w - pL - pR) / (n - 1 || 1);
 
-        ctx.clearRect(0,0,w,h);
-        
+        ctx.fillStyle = "white"; ctx.fillRect(0,0,w,h);
+
         // Grid
-        ctx.strokeStyle = "#eee"; ctx.fillStyle = "#999"; ctx.font = "10px sans-serif";
+        ctx.fillStyle = "#94a3b8"; ctx.font = "bold 11px sans-serif"; ctx.textAlign = "right";
         for(let i=0; i<=5; i++) {
-            let val = max/5*i, y = (h-pB)-(val/max*(h-pB-pT));
-            ctx.fillText(Math.round(val).toLocaleString(), pL-10, y+3);
+            const val = Math.round(max/5*i), y = (h-pB)-(val/max*(h-pB-pT));
+            ctx.fillText(val.toLocaleString(), pL-15, y+4);
         }
 
-        // Main Line
-        ctx.strokeStyle = "#41797e"; ctx.lineWidth = 4; ctx.beginPath();
+        // Target Line
+        if(goal > 0) {
+            const gy = (h-pB)-(goal/max*(h-pB-pT));
+            ctx.strokeStyle = "#e11d48"; ctx.lineWidth = 2;
+            ctx.beginPath(); ctx.moveTo(pL, gy); ctx.lineTo(w-pR, gy); ctx.stroke();
+            ctx.fillStyle = "#e11d48"; ctx.textAlign="left"; ctx.fillText("ANNUAL TARGET", w-pR+10, gy+4);
+        }
+
+        // Forecast Projection
+        const fy = (h-pB)-((m*n+b)/max*(h-pB-pT)), fx = pL+(n*step);
+        ctx.setLineDash([5,5]); ctx.strokeStyle = "#cbd5e1"; ctx.beginPath();
+        ctx.moveTo(pL+((n-1)*step), (h-pB)-(pts[n-1].y/max*(h-pB-pT)));
+        ctx.lineTo(fx, fy); ctx.stroke();
+        
+        ctx.setLineDash([]); ctx.fillStyle = "#41797e";
+        ctx.beginPath(); ctx.arc(fx, fy, 8, 0, 7); ctx.fill();
+        ctx.fillStyle = "#001935"; ctx.font = "bold 14px sans-serif"; ctx.textAlign="left";
+        ctx.fillText("FORECAST POINT", fx+15, fy+5);
+
+        // Data Pulse
+        ctx.strokeStyle = "#41797e"; ctx.lineWidth = 5; ctx.beginPath();
         pts.forEach((p, i) => {
             const x = pL+(i*step), y = (h-pB)-(p.y/max*(h-pB-pT));
             if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+            ctx.save(); ctx.translate(x, h-pB+30); ctx.rotate(Math.PI/4);
+            ctx.fillStyle = "#64748b"; ctx.textAlign="left"; ctx.fillText(p.x, 0, 0); ctx.restore();
         });
         ctx.stroke();
     }
