@@ -2,42 +2,27 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>CamacPulseVisualizer | Predictive Analytics</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <title>CamacPulseVisualizer | Robust Edition</title>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <style>
         :root { --teal: #41797e; --navy: #001935; --bg: #f4f7f9; --card: #ffffff; --text: #333333; }
         body.dark-mode { --bg: #000a14; --card: #001935; --text: #f4f7f9; --teal: #5aa4ab; }
-        
-        body { font-family: -apple-system, system-ui, sans-serif; background: var(--bg); margin: 0; padding: 20px 20px 100px 20px; color: var(--text); transition: 0.3s; }
+        body { font-family: -apple-system, system-ui, sans-serif; background: var(--bg); margin: 0; padding: 20px 20px 100px 20px; color: var(--text); }
         .app-container { max-width: 1000px; margin: auto; background: var(--card); padding: 30px; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); border-top: 8px solid var(--teal); }
-        
         .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-        .header h1 { margin: 0; font-size: 24px; letter-spacing: 1px; }
-
         .summary-bar { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; margin-bottom: 20px; display: none; }
         .summary-card { background: var(--bg); padding: 15px; border-radius: 10px; text-align: center; border: 1px solid rgba(0,0,0,0.1); }
-        .summary-card small { display: block; font-size: 10px; text-transform: uppercase; opacity: 0.7; margin-bottom: 5px; }
-        .summary-card span { font-size: 18px; font-weight: bold; color: var(--teal); }
-
-        .config-panel { display: none; background: rgba(127,127,127,0.05); padding: 20px; border-radius: 10px; margin-bottom: 20px; border: 1px solid rgba(0,0,0,0.1); }
+        .summary-card span { font-size: 18px; font-weight: bold; color: var(--teal); display: block; }
+        .upload-zone { border: 2px dashed #ccc; padding: 40px; border-radius: 10px; cursor: pointer; text-align: center; margin-bottom: 20px; background: rgba(0,0,0,0.02); }
+        .upload-zone:hover { border-color: var(--teal); background: rgba(65,121,126,0.05); }
+        .config-panel { display: none; background: rgba(0,0,0,0.03); padding: 20px; border-radius: 10px; margin-bottom: 20px; }
         .config-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-        select { width: 100%; padding: 10px; border-radius: 5px; border: 1px solid #ccc; background: var(--card); color: var(--text); }
-
-        .upload-zone { border: 2px dashed #ccc; padding: 30px; border-radius: 10px; cursor: pointer; text-align: center; margin-bottom: 20px; transition: 0.2s; }
-        .upload-zone:hover { border-color: var(--teal); background: rgba(65, 121, 126, 0.05); }
-        
-        .toolbar { display: none; flex-direction: column; align-items: center; margin-bottom: 20px; gap: 15px; }
-        .chart-options { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
-        
-        .btn { padding: 10px 18px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; font-size: 11px; text-transform: uppercase; transition: 0.2s; }
-        .btn-teal { background: var(--teal); color: white; }
-        .btn-navy { background: var(--navy); color: white; border: 1px solid var(--teal); }
-        .btn-outline { background: transparent; border: 1px solid var(--teal); color: var(--teal); }
-
-        canvas { width: 100%; height: 450px; background: #fff; border-radius: 8px; margin-bottom: 10px; }
-
+        select { width: 100%; padding: 10px; border-radius: 5px; }
+        .toolbar { display: none; justify-content: center; gap: 10px; margin-bottom: 20px; }
+        .btn { padding: 10px 18px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; font-size: 11px; text-transform: uppercase; background: var(--teal); color: white; }
+        canvas { width: 100%; height: 450px; background: #fff; border-radius: 8px; display: none; }
         .fixed-footer { position: fixed; bottom: 0; left: 0; width: 100%; background: var(--navy); padding: 15px 0; text-align: center; z-index: 1000; border-top: 3px solid var(--teal); }
-        .fixed-footer a { color: white; text-decoration: none; font-size: 12px; font-weight: bold; text-transform: uppercase; letter-spacing: 1.5px; }
+        .fixed-footer a { color: white; text-decoration: none; font-size: 12px; font-weight: bold; }
     </style>
 </head>
 <body>
@@ -45,42 +30,39 @@
 <div class="app-container">
     <div class="header">
         <h1>CamacPulseVisualizer</h1>
-        <button class="btn btn-outline" onclick="toggleDark()">🌓 Theme</button>
+        <div id="statusIndicator" style="font-size: 12px; font-weight: bold; color: var(--teal);">System Ready</div>
     </div>
 
-    <div id="dropZone" class="upload-zone" onclick="document.getElementById('fileIn').click()">
-        <strong>Upload Data Pulse</strong>
-        <p style="font-size: 12px; opacity: 0.7;">Predictive analysis will be applied automatically.</p>
+    <div class="upload-zone" id="dropZone" onclick="document.getElementById('fileIn').click()">
+        <strong id="uploadText">Upload Excel or CSV</strong>
+        <p style="font-size: 12px; opacity: 0.7;">Click to select file</p>
     </div>
     <input type="file" id="fileIn" style="display:none" accept=".xlsx, .xls, .csv">
 
     <div id="summaryBar" class="summary-bar">
-        <div class="summary-card"><small>Total Sum</small><span id="statSum">$0</span></div>
-        <div class="summary-card"><small>Average</small><span id="statAvg">$0</span></div>
-        <div class="summary-card"><small>Projection</small><span id="statTrend">---</span></div>
+        <div class="summary-card"><small>TOTAL SUM</small><span id="statSum">$0</span></div>
+        <div class="summary-card"><small>AVERAGE</small><span id="statAvg">$0</span></div>
+        <div class="summary-card"><small>TREND</small><span id="statTrend">---</span></div>
     </div>
 
     <div id="configPanel" class="config-panel">
         <div class="config-grid">
             <div><label>X-Axis (Labels)</label><select id="labelCol" onchange="mapAndRender()"></select></div>
-            <div><label>Y-Axis (Metrics)</label><select id="valueCol" onchange="mapAndRender()"></select></div>
+            <div><label>Y-Axis (Values)</label><select id="valueCol" onchange="mapAndRender()"></select></div>
         </div>
     </div>
 
     <div class="toolbar" id="toolBar">
-        <div class="chart-options">
-            <button class="btn btn-teal" onclick="setMode('line')">📈 Line</button>
-            <button class="btn btn-teal" onclick="setMode('bar')">📊 Bar</button>
-            <button class="btn btn-teal" onclick="setMode('area')">🌊 Area</button>
-            <button class="btn btn-outline" onclick="downloadImage()">🖼 Save Image</button>
-        </div>
+        <button class="btn" onclick="setMode('line')">Line Pulse</button>
+        <button class="btn" onclick="setMode('bar')">Bar Growth</button>
+        <button class="btn" onclick="downloadImage()" style="background: var(--navy); border: 1px solid var(--teal);">Export PNG</button>
     </div>
 
     <canvas id="pulseCanvas"></canvas>
 </div>
 
 <div class="fixed-footer">
-    <a href="https://camacconsulting.github.io/CamacPulseVisualizer/" target="_blank">Open Full Window ↗</a>
+    <a href="https://camacconsulting.github.io/CamacPulseVisualizer/" target="_blank">OPEN FULL WINDOW ↗</a>
 </div>
 
 <script>
@@ -90,25 +72,45 @@
     const canvas = document.getElementById('pulseCanvas');
     const ctx = canvas.getContext('2d');
 
-    function toggleDark() { document.body.classList.toggle('dark-mode'); render(); }
-
-    document.getElementById('fileIn').onchange = function(e) {
+    document.getElementById('fileIn').addEventListener('change', function(e) {
         const file = e.target.files[0];
         if (!file) return;
+
+        document.getElementById('statusIndicator').innerText = "Processing...";
+        document.getElementById('uploadText').innerText = "Reading: " + file.name;
+
         const reader = new FileReader();
         reader.onload = function(evt) {
-            const workbook = XLSX.read(new Uint8Array(evt.target.result), {type: 'array'});
-            rawJson = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]]);
-            if (rawJson.length > 0) {
-                populateSelectors(Object.keys(rawJson[0]));
-                document.getElementById('configPanel').style.display = 'block';
-                document.getElementById('toolBar').style.display = 'flex';
-                document.getElementById('summaryBar').style.display = 'grid';
-                mapAndRender();
+            try {
+                const data = new Uint8Array(evt.target.result);
+                const workbook = XLSX.read(data, {type: 'array', cellDates: true});
+                const firstSheetName = workbook.SheetNames[0];
+                const worksheet = workbook.Sheets[firstSheetName];
+                
+                rawJson = XLSX.utils.sheet_to_json(worksheet, {defval: ""});
+
+                if (rawJson.length > 0) {
+                    const headers = Object.keys(rawJson[0]);
+                    populateSelectors(headers);
+                    
+                    document.getElementById('configPanel').style.display = 'block';
+                    document.getElementById('toolBar').style.display = 'flex';
+                    document.getElementById('summaryBar').style.display = 'grid';
+                    document.getElementById('statusIndicator').innerText = "Success";
+                    canvas.style.display = 'block';
+                    
+                    mapAndRender();
+                } else {
+                    alert("File is empty or could not be read.");
+                }
+            } catch (err) {
+                console.error(err);
+                alert("Error reading file. Please ensure it is a valid .xlsx or .csv");
             }
         };
+        reader.onerror = function() { alert("File error."); };
         reader.readAsArrayBuffer(file);
-    };
+    });
 
     function populateSelectors(headers) {
         const lSel = document.getElementById('labelCol'), vSel = document.getElementById('valueCol');
@@ -123,10 +125,12 @@
     function mapAndRender() {
         const lKey = document.getElementById('labelCol').value;
         const vKey = document.getElementById('valueCol').value;
-        currentData = rawJson.map(row => ({
-            label: String(row[lKey] || ""),
-            val: parseFloat(String(row[vKey]).replace(/[^0-9.-]/g, ''))
-        })).filter(d => !isNaN(d.val));
+
+        currentData = rawJson.map(row => {
+            let valStr = String(row[vKey] || "0");
+            let cleanVal = parseFloat(valStr.replace(/[^0-9.-]/g, ''));
+            return { label: String(row[lKey] || ""), val: isNaN(cleanVal) ? 0 : cleanVal };
+        });
 
         updateStats();
         render();
@@ -134,4 +138,54 @@
 
     function updateStats() {
         const vals = currentData.map(d => d.val);
-        const sum = vals.reduce((a, b
+        const sum = vals.reduce((a, b) => a + b, 0);
+        document.getElementById('statSum').innerText = sum.toLocaleString();
+        document.getElementById('statAvg').innerText = (sum / (vals.length || 1)).toLocaleString();
+        
+        // Regression trend
+        const n = vals.length;
+        let sX = 0, sY = 0, sXY = 0, sXX = 0;
+        vals.forEach((y, x) => { sX += x; sY += y; sXY += x*y; sXX += x*x; });
+        const slope = (n * sXY - sX * sY) / (n * sXX - sX * sX);
+        document.getElementById('statTrend').innerText = slope > 0 ? "Upward" : "Downward";
+    }
+
+    function setMode(m) { chartMode = m; render(); }
+
+    function render() {
+        const dpr = 2;
+        canvas.width = canvas.offsetWidth * dpr;
+        canvas.height = canvas.offsetHeight * dpr;
+        ctx.scale(dpr, dpr);
+        const w = canvas.offsetWidth, h = canvas.offsetHeight, pad = 60;
+        const vals = currentData.map(d => d.val);
+        const max = Math.max(...vals) * 1.2 || 1, min = 0;
+        const range = max - min, step = (w - (pad * 2)) / (currentData.length - 1 || 1);
+
+        ctx.clearRect(0,0,w,h);
+        ctx.fillStyle = "#ffffff"; ctx.fillRect(0,0,w,h);
+
+        // Chart line
+        ctx.beginPath();
+        ctx.strokeStyle = "#41797e";
+        ctx.lineWidth = 3;
+        currentData.forEach((d, i) => {
+            const x = pad + (i * step), y = (h - pad) - ((d.val - min) / range * (h - pad * 2));
+            if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+            if (chartMode === 'bar') {
+                ctx.fillStyle = "#001935";
+                ctx.fillRect(x - 5, y, 10, (h-pad)-y);
+            }
+        });
+        if (chartMode === 'line') ctx.stroke();
+    }
+
+    function downloadImage() {
+        const link = document.createElement('a');
+        link.download = 'VisualExport.png';
+        link.href = canvas.toDataURL();
+        link.click();
+    }
+</script>
+</body>
+</html>
