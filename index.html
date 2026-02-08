@@ -7,12 +7,11 @@
     <style>
         :root { --teal: #41797e; --navy: #001935; --bg: #f4f7f9; }
         body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg); margin: 0; padding: 20px; color: #333; }
-        .app-container { max-width: 900px; margin: auto; background: white; padding: 30px; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); border-top: 8px solid var(--teal); }
+        .app-container { max-width: 900px; margin: auto; background: white; padding: 30px; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); border-top: 8px solid var(--teal); position: relative; }
         
         .header { text-align: center; margin-bottom: 25px; }
         .header h1 { color: var(--navy); margin: 0; font-size: 28px; letter-spacing: 1px; }
         
-        /* Guide Note */
         .file-guide { background: #eef4f4; border-left: 4px solid var(--teal); padding: 15px; margin-bottom: 25px; font-size: 13px; line-height: 1.5; color: #444; }
         .file-guide strong { color: var(--navy); text-transform: uppercase; font-size: 11px; display: block; margin-bottom: 5px; }
         
@@ -25,8 +24,14 @@
         .btn-navy { background: var(--navy); color: white; }
         
         canvas { width: 100%; height: 400px; display: block; background: #fff; border: 1px solid #eee; border-radius: 8px; }
+        
         .status-bar { font-size: 12px; color: #777; text-align: center; margin-top: 15px; padding: 10px; border-radius: 5px; }
         .status-ok { background: #d4edda; color: #155724; font-weight: bold; }
+
+        /* Full Window Link Styling */
+        .footer-links { text-align: center; margin-top: 30px; border-top: 1px solid #eee; padding-top: 20px; }
+        .full-window-btn { color: var(--teal); text-decoration: none; font-size: 12px; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px; transition: 0.2s; }
+        .full-window-btn:hover { color: var(--navy); text-decoration: underline; }
     </style>
 </head>
 <body>
@@ -39,13 +44,13 @@
     <div class="file-guide">
         <strong>Compatibility & Format Guide</strong>
         * **Accepted Files:** Microsoft Excel (.xlsx, .xls), CSV (.csv), or Text (.txt).
-        * **Required Layout:** Use **Column A** for labels (Dates, Names, Years) and **Column B** for the numerical values you wish to analyze.
-        * **Note:** If using Excel, the visualizer will automatically read the first sheet in your workbook.
+        * **Required Layout:** Use **Column A** for labels and **Column B** for numerical values.
+        * **Note:** Excel files will read the first active worksheet.
     </div>
 
     <div class="upload-zone" id="dropZone" onclick="document.getElementById('fileIn').click()">
         <strong style="color: var(--navy);">Click to Upload Data</strong>
-        <p style="font-size: 12px; color: #888; margin-top: 8px;">Drag and drop your spreadsheet here to map the pulse.</p>
+        <p style="font-size: 12px; color: #888; margin-top: 8px;">Drag and drop your spreadsheet here.</p>
     </div>
     <input type="file" id="fileIn" style="display:none" accept=".xlsx, .xls, .csv, .txt">
 
@@ -56,6 +61,12 @@
 
     <canvas id="pulseCanvas"></canvas>
     <div class="status-bar" id="statusMsg">System Active. Awaiting Input.</div>
+
+    <div class="footer-links">
+        <a href="https://camacconsulting.github.io/CamacPulseVisualizer/" target="_blank" class="full-window-btn">
+            View Full Window ↗
+        </a>
+    </div>
 </div>
 
 <script>
@@ -76,7 +87,6 @@
                 const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
                 const json = XLSX.utils.sheet_to_json(firstSheet, {header: 1});
                 
-                // Map Data: Column A (0) is Label, Column B (1) is Value
                 currentData = json.map(row => ({
                     label: String(row[0] || ""), 
                     val: parseFloat(row[1]) 
@@ -85,14 +95,14 @@
                 if (currentData.length > 0) {
                     document.getElementById('toolBar').style.display = 'flex';
                     const msg = document.getElementById('statusMsg');
-                    msg.innerText = `SUCCESS: "${file.name}" mapped successfully.`;
+                    msg.innerText = `SUCCESS: "${file.name}" mapped.`;
                     msg.className = "status-bar status-ok";
                     render();
                 } else {
-                    throw new Error("No numeric data found in Column B.");
+                    throw new Error();
                 }
             } catch (err) {
-                document.getElementById('statusMsg').innerText = "ERROR: Could not parse file. Check Column B for numbers.";
+                document.getElementById('statusMsg').innerText = "ERROR: Could not parse data. Ensure numbers are in Column B.";
                 document.getElementById('statusMsg').className = "status-bar";
             }
         };
@@ -118,7 +128,6 @@
 
         ctx.clearRect(0, 0, w, h);
 
-        // Draw Line Pulse
         if (chartMode === 'line') {
             ctx.beginPath(); ctx.strokeStyle = "#41797e"; ctx.lineWidth = 4;
             currentData.forEach((d, i) => {
@@ -129,7 +138,6 @@
             ctx.stroke();
         }
 
-        // Draw Nodes/Bars
         currentData.forEach((d, i) => {
             const x = pad + (i * step);
             const y = (h - pad) - ((d.val - min) / range * (h - pad * 2));
@@ -143,7 +151,6 @@
                 ctx.beginPath(); ctx.arc(x, y, 6, 0, Math.PI*2); ctx.fill();
             }
             
-            // Labels for smaller datasets
             if (currentData.length < 15) {
                 ctx.fillStyle = "#333";
                 ctx.font = "bold 11px sans-serif";
