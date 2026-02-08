@@ -8,7 +8,7 @@
         :root { --teal: #41797e; --navy: #001935; --bg: #f4f7f9; --card: #ffffff; --text: #333333; }
         body.dark-mode { --bg: #000a14; --card: #001935; --text: #f4f7f9; --teal: #5aa4ab; }
         
-        body { font-family: -apple-system, system-ui, sans-serif; background: var(--bg); margin: 0; padding: 20px 20px 80px 20px; color: var(--text); transition: 0.3s; }
+        body { font-family: -apple-system, system-ui, sans-serif; background: var(--bg); margin: 0; padding: 20px 20px 100px 20px; color: var(--text); transition: 0.3s; }
         .app-container { max-width: 1000px; margin: auto; background: var(--card); padding: 30px; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); border-top: 8px solid var(--teal); }
         
         .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
@@ -32,12 +32,13 @@
         .btn-navy { background: var(--navy); color: white; border: 1px solid var(--teal); }
         .btn-outline { background: transparent; border: 1px solid var(--teal); color: var(--teal); }
 
-        canvas { width: 100%; height: 450px; background: #fff; border-radius: 8px; }
+        canvas { width: 100%; height: 450px; background: #fff; border-radius: 8px; margin-bottom: 10px; }
 
-        /* FIXED FOOTER FOR VIEW FULL WINDOW */
-        .fixed-footer { position: fixed; bottom: 0; left: 0; width: 100%; background: var(--navy); padding: 12px 0; text-align: center; z-index: 100; border-top: 2px solid var(--teal); }
-        .fixed-footer a { color: white; text-decoration: none; font-size: 12px; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; }
-        .fixed-footer a:hover { color: var(--teal); }
+        .export-hub { display: none; margin-top: 20px; padding-top: 20px; border-top: 1px solid rgba(127,127,127,0.2); text-align: center; }
+        .export-hub h3 { font-size: 12px; margin-bottom: 15px; opacity: 0.6; text-transform: uppercase; }
+
+        .fixed-footer { position: fixed; bottom: 0; left: 0; width: 100%; background: var(--navy); padding: 15px 0; text-align: center; z-index: 1000; border-top: 3px solid var(--teal); }
+        .fixed-footer a { color: white; text-decoration: none; font-size: 12px; font-weight: bold; text-transform: uppercase; letter-spacing: 1.5px; }
     </style>
 </head>
 <body>
@@ -48,9 +49,9 @@
         <button class="btn btn-outline" onclick="toggleDark()">🌓 Theme</button>
     </div>
 
-    <div class="upload-zone" onclick="document.getElementById('fileIn').click()">
+    <div id="dropZone" class="upload-zone" onclick="document.getElementById('fileIn').click()">
         <strong>Upload Spreadsheet (Excel/CSV)</strong>
-        <p style="font-size: 12px; opacity: 0.7;">Click to select or drag data here.</p>
+        <p style="font-size: 12px; opacity: 0.7;">Upload data to generate strategic visuals.</p>
     </div>
     <input type="file" id="fileIn" style="display:none" accept=".xlsx, .xls, .csv">
 
@@ -72,17 +73,22 @@
             <button class="btn btn-teal" onclick="setMode('line')">Line Pulse</button>
             <button class="btn btn-navy" onclick="setMode('bar')">Bar Growth</button>
         </div>
-        <button class="btn btn-outline" onclick="downloadImage()">💾 Save PNG</button>
     </div>
 
     <canvas id="pulseCanvas"></canvas>
-    <p style="text-align:center; font-size:10px; margin-top:10px; opacity:0.5;">Camac Consulting Strategic Asset</p>
+
+    <div id="exportHub" class="export-hub">
+        <h3>Export Intelligence</h3>
+        <div class="btn-group" style="justify-content: center; flex-wrap: wrap;">
+            <button class="btn btn-outline" onclick="downloadImage()">🖼 Save Visual (PNG)</button>
+            <button class="btn btn-outline" onclick="exportData('xlsx')">📊 Save Excel (.xlsx)</button>
+            <button class="btn btn-outline" onclick="exportData('csv')">📑 Save CSV (.csv)</button>
+        </div>
+    </div>
 </div>
 
 <div class="fixed-footer">
-    <a href="https://camacconsulting.github.io/CamacPulseVisualizer/" target="_blank">
-        Open Tool in Full Window ↗
-    </a>
+    <a href="https://camacconsulting.github.io/CamacPulseVisualizer/" target="_blank">Open Full Window ↗</a>
 </div>
 
 <script>
@@ -106,6 +112,7 @@
                 document.getElementById('configPanel').style.display = 'block';
                 document.getElementById('toolBar').style.display = 'flex';
                 document.getElementById('summaryBar').style.display = 'grid';
+                document.getElementById('exportHub').style.display = 'block';
                 mapAndRender();
             }
         };
@@ -126,74 +133,4 @@
         const lKey = document.getElementById('labelCol').value;
         const vKey = document.getElementById('valueCol').value;
         currentData = rawJson.map(row => ({
-            label: String(row[lKey] || ""),
-            val: parseFloat(String(row[vKey]).replace(/[^0-9.-]/g, ''))
-        })).filter(d => !isNaN(d.val));
-
-        const vals = currentData.map(d => d.val);
-        const sum = vals.reduce((a, b) => a + b, 0);
-        document.getElementById('statSum').innerText = sum.toLocaleString(undefined, {style:'currency', currency:'USD', maximumFractionDigits:0});
-        document.getElementById('statAvg').innerText = (sum / vals.length).toLocaleString(undefined, {style:'currency', currency:'USD', maximumFractionDigits:0});
-        document.getElementById('statMax').innerText = Math.max(...vals).toLocaleString(undefined, {style:'currency', currency:'USD', maximumFractionDigits:0});
-        render();
-    }
-
-    function setMode(m) { chartMode = m; render(); }
-
-    function render() {
-        const dpr = 2;
-        canvas.width = canvas.offsetWidth * dpr;
-        canvas.height = canvas.offsetHeight * dpr;
-        ctx.scale(dpr, dpr);
-        const w = canvas.offsetWidth, h = canvas.offsetHeight, pad = 60;
-        const vals = currentData.map(d => d.val);
-        const max = Math.max(...vals) * 1.2 || 100, min = Math.min(...vals) < 0 ? Math.min(...vals) * 1.1 : 0;
-        const range = max - min, step = (w - (pad * 2)) / (currentData.length - 1 || 1);
-
-        ctx.fillStyle = getComputedStyle(document.body).getPropertyValue('--card');
-        ctx.fillRect(0,0,w,h);
-        ctx.strokeStyle = "rgba(127,127,127,0.2)";
-        for(let i=0; i<=4; i++) {
-            let y = pad + ((h - pad*2) / 4) * i;
-            ctx.beginPath(); ctx.moveTo(pad, y); ctx.lineTo(w-pad, y); ctx.stroke();
-        }
-
-        const teal = getComputedStyle(document.body).getPropertyValue('--teal').trim();
-        const navy = getComputedStyle(document.body).getPropertyValue('--navy').trim();
-
-        if (chartMode === 'line') {
-            ctx.beginPath(); ctx.strokeStyle = teal; ctx.lineWidth = 4;
-            currentData.forEach((d, i) => {
-                const x = pad + (i * step), y = (h - pad) - ((d.val - min) / range * (h - pad * 2));
-                if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
-            });
-            ctx.stroke();
-        }
-
-        currentData.forEach((d, i) => {
-            const x = pad + (i * step), y = (h - pad) - ((d.val - min) / range * (h - pad * 2));
-            ctx.fillStyle = (chartMode === 'bar') ? navy : teal;
-            if (chartMode === 'bar') {
-                const bw = Math.max(step * 0.7, 5);
-                ctx.fillRect(x - bw/2, y, bw, (h-pad) - y);
-            } else {
-                ctx.beginPath(); ctx.arc(x, y, 5, 0, Math.PI*2); ctx.fill();
-            }
-            if (currentData.length < 15) {
-                ctx.fillStyle = getComputedStyle(document.body).getPropertyValue('--text');
-                ctx.font = "bold 10px sans-serif"; ctx.textAlign = "center";
-                ctx.fillText(Math.round(d.val).toLocaleString(), x, y - 12);
-                ctx.fillText(d.label, x, h - pad + 25);
-            }
-        });
-    }
-
-    function downloadImage() {
-        const link = document.createElement('a');
-        link.download = 'CamacPulse_Export.png';
-        link.href = canvas.toDataURL('image/png');
-        link.click();
-    }
-</script>
-</body>
-</html>
+            "Label": String(row[lKey
