@@ -1,215 +1,193 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CamacPulse | Enterprise Analytics</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<div id="camac-pulse-root">
     <style>
-        :root { 
-            --primary: #0f172a; --accent: #3b82f6; --success: #10b981; --danger: #f43f5e; --warning: #f59e0b;
-            --text-main: #1e293b; --text-muted: #64748b; --bg-subtle: #f8fafc;
-            --card-bg: #ffffff; --border: #e2e8f0; --ctrl-bg: #f8fafc;
-            --card-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05);
+        #camac-pulse-root {
+            --cp-primary: #0f172a; --cp-accent: #3b82f6; --cp-success: #10b981;
+            --cp-text: #1e293b; --cp-bg: #ffffff; --cp-border: #e2e8f0;
+            font-family: 'Inter', sans-serif;
+            color: var(--cp-text);
+            background: var(--cp-bg);
+            padding: 20px;
+            border-radius: 12px;
+            border: 1px solid var(--cp-border);
+            line-height: 1.5;
         }
 
-        [data-theme="dark"] {
-            --primary: #f8fafc; --accent: #60a5fa; --text-main: #f1f5f9;
-            --text-muted: #94a3b8; --bg-subtle: #020617; --card-bg: #1e293b;
-            --border: #334155; --ctrl-bg: #0f172a;
-            --card-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3);
-        }
-
-        body { font-family: 'Inter', system-ui, sans-serif; background: var(--bg-subtle); color: var(--text-main); margin: 0; padding-bottom: 120px; transition: all 0.3s; }
-        header { background: var(--card-bg); padding: 1rem 2rem; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); }
-        .container { max-width: 1600px; margin: 2rem auto; padding: 0 2rem; }
-        .upload-card { background: var(--card-bg); padding: 60px; border-radius: 16px; box-shadow: var(--card-shadow); border: 2px dashed var(--border); text-align: center; }
+        .cp-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
         
-        #statsDash { display: none; grid-template-columns: repeat(4, 1fr); gap: 1.5rem; margin-bottom: 1.5rem; }
-        .card { background: var(--card-bg); padding: 1.25rem; border-radius: 12px; box-shadow: var(--card-shadow); border: 1px solid var(--border); }
-        .card-label { font-size: 0.65rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 0.5rem; letter-spacing: 0.05em;}
-        .card-val { font-size: 1.6rem; font-weight: 800; }
+        .cp-upload-zone { 
+            border: 2px dashed var(--cp-border); 
+            padding: 40px; text-align: center; border-radius: 12px; margin-bottom: 20px;
+        }
 
-        .main-view { display: none; background: var(--card-bg); padding: 1.5rem; border-radius: 16px; box-shadow: var(--card-shadow); border: 1px solid var(--border); }
-        .ctrl-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.5rem; background: var(--ctrl-bg); padding: 1.5rem; border-radius: 12px; margin-bottom: 1.5rem; border: 1px solid var(--border); }
-        label { font-size: 0.75rem; font-weight: 700; color: var(--text-muted); display: block; margin-bottom: 5px; }
-        select, input { width: 100%; padding: 0.75rem; border-radius: 8px; border: 1px solid var(--border); background: var(--card-bg); color: var(--text-main); font-size: 0.85rem; }
+        .cp-stats { 
+            display: none; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); 
+            gap: 15px; margin-bottom: 20px; 
+        }
 
-        canvas { width: 100%; height: 600px; display: block; }
+        .cp-card { 
+            background: #f8fafc; padding: 15px; border-radius: 8px; border: 1px solid var(--cp-border); 
+        }
 
-        .nav-bar { position: fixed; bottom: 0; left: 0; width: 100%; background: var(--card-bg); border-top: 1px solid var(--border); padding: 1.25rem 0; text-align: center; z-index: 1000; }
-        .btn { background: var(--accent); color: white; padding: 12px 24px; border-radius: 8px; border: none; font-weight: 600; cursor: pointer; transition: all 0.2s; font-size: 0.85rem; }
-        .btn-outline { background: transparent; color: var(--text-main); border: 1px solid var(--border); margin-right: 8px; }
+        .cp-card-label { font-size: 10px; text-transform: uppercase; font-weight: 700; color: #64748b; }
+        .cp-card-val { font-size: 18px; font-weight: 800; }
 
-        @media print { .nav-bar, .ctrl-row, #uploadPanel, #themeBtn { display: none !important; } }
+        .cp-controls { 
+            display: none; grid-template-columns: 1fr 1fr; gap: 10px; 
+            background: #f1f5f9; padding: 15px; border-radius: 8px; margin-bottom: 10px;
+        }
+
+        #pulseCanvas { width: 100%; height: 400px; background: white; border-radius: 8px; cursor: crosshair; }
+
+        .cp-btn {
+            background: var(--cp-accent); color: white; border: none; 
+            padding: 10px 18px; border-radius: 6px; cursor: pointer; font-weight: 600;
+        }
+        
+        select, input { width: 100%; padding: 8px; border: 1px solid var(--cp-border); border-radius: 4px; }
     </style>
-</head>
-<body data-theme="light">
 
-<header>
-    <strong>CamacPulse <span style="color:var(--accent)">Intelligence</span></strong>
-    <div style="display:flex; align-items:center; gap: 15px;">
-        <div id="themeBtn" style="cursor:pointer; font-size: 0.75rem; font-weight:700; color:var(--text-muted);" onclick="toggleTheme()">NIGHT MODE</div>
-        <button class="btn btn-outline" style="padding: 6px 12px; font-size: 11px;" onclick="window.print()">PRINT</button>
-    </div>
-</header>
-
-<div class="container">
-    <div class="upload-card" id="uploadPanel">
-        <h2 style="margin:0 0 10px 0;">Analytical Engine</h2>
-        <p style="color: var(--text-muted);">Upload XLSX/CSV to generate trajectory confidence models.</p>
-        <input type="file" id="filePicker" accept=".xlsx, .xls, .csv">
+    <div class="cp-header">
+        <strong>CamacPulse <span style="color:var(--cp-accent)">Intelligence</span></strong>
+        <button class="cp-btn" style="font-size:11px" onclick="location.reload()">Reset</button>
     </div>
 
-    <div id="statsDash">
-        <div class="card"><div class="card-label">Avg. Performance</div><div class="card-val" id="vAvg">0</div></div>
-        <div class="card"><div class="card-label">Trajectory Slope</div><div class="card-val" id="vTrend">---</div></div>
-        <div class="card"><div class="card-label">Trend Confidence ($R^2$)</div><div class="card-val" id="vConf">0%</div></div>
-        <div class="card"><div class="card-label">Horizon Projection</div><div class="card-val" id="vFore">0</div></div>
+    <div id="cp-upload" class="cp-upload-zone">
+        <h3>Analytical Engine</h3>
+        <p>Upload a .csv or .xlsx file to start</p>
+        <input type="file" id="cp-file" accept=".csv, .xlsx, .xls">
     </div>
 
-    <div class="main-view" id="mainApp">
-        <div class="ctrl-row">
-            <div><label>X-Labels</label><select id="pickX" onchange="draw()"></select></div>
-            <div><label>Y-Values</label><select id="pickY" onchange="draw()"></select></div>
-            <div><label>KPI Target</label><input type="number" id="pickGoal" oninput="draw()" value="0"></div>
-            <div><label>Forecast Steps</label><input type="number" id="pickSteps" oninput="draw()" value="3" min="1" max="12"></div>
+    <div id="cp-dash" class="cp-stats">
+        <div class="cp-card"><div class="cp-card-label">Avg Performance</div><div id="cp-vAvg" class="cp-card-val">0</div></div>
+        <div class="cp-card"><div class="cp-card-label">Forecast</div><div id="cp-vFore" class="cp-card-val">0</div></div>
+        <div class="cp-card"><div class="cp-card-label">Confidence</div><div id="cp-vConf" class="cp-card-val">0%</div></div>
+    </div>
+
+    <div id="cp-main" style="display:none;">
+        <div class="cp-controls">
+            <div><label style="font-size:10px">X Axis</label><select id="cp-pickX" onchange="cpDraw()"></select></div>
+            <div><label style="font-size:10px">Y Axis</label><select id="cp-pickY" onchange="cpDraw()"></select></div>
+            <div><label style="font-size:10px">Forecast Steps</label><input type="number" id="cp-steps" value="3" oninput="cpDraw()"></div>
         </div>
         <canvas id="pulseCanvas"></canvas>
     </div>
-</div>
 
-<div class="nav-bar">
-    <button class="btn btn-outline" onclick="exportData()">Export Data</button>
-    <button class="btn btn-outline" onclick="exportChart()">Save PNG</button>
-    <button class="btn" onclick="window.open(window.location.href, '_blank')">Expand Workspace ↗</button>
-</div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
-<script>
-    let dataSet = [];
+    <script>
+        let cpData = [];
+        let cpMouse = { x: -1, y: -1 };
+        let cpPoints = [];
 
-    function toggleTheme() {
-        const b = document.body;
-        const isDark = b.getAttribute('data-theme') === 'dark';
-        b.setAttribute('data-theme', isDark ? 'light' : 'dark');
-        document.getElementById('themeBtn').innerText = isDark ? 'NIGHT MODE' : 'LIGHT MODE';
-        if(dataSet.length) draw();
-    }
-
-    window.addEventListener('load', () => {
-        const saved = localStorage.getItem('pulseData');
-        if (saved) { dataSet = JSON.parse(saved); startApp(); }
-    });
-
-    document.getElementById('filePicker').addEventListener('change', (e) => {
-        const file = e.target.files[0];
-        const reader = new FileReader();
-        reader.onload = (f) => {
-            const workbook = XLSX.read(new Uint8Array(f.target.result), {type: 'array'});
-            dataSet = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]]);
-            localStorage.setItem('pulseData', JSON.stringify(dataSet));
-            startApp();
-        };
-        reader.readAsArrayBuffer(file);
-    });
-
-    function startApp() {
-        if(!dataSet.length) return;
-        const keys = Object.keys(dataSet[0]);
-        const sx = document.getElementById('pickX'), sy = document.getElementById('pickY');
-        sx.innerHTML = ''; sy.innerHTML = '';
-        keys.forEach(k => { sx.add(new Option(k,k)); sy.add(new Option(k,k)); });
-        if(keys.length > 1) sy.selectedIndex = 1;
-        document.getElementById('uploadPanel').style.display = 'none';
-        document.getElementById('statsDash').style.display = 'grid';
-        document.getElementById('mainApp').style.display = 'block';
-        draw();
-    }
-
-    function draw() {
-        const canvas = document.getElementById('pulseCanvas'), ctx = canvas.getContext('2d');
-        const xKey = document.getElementById('pickX').value, yKey = document.getElementById('pickY').value;
-        const goal = parseFloat(document.getElementById('pickGoal').value) || 0;
-        const steps = parseInt(document.getElementById('pickSteps').value) || 1;
-        const isDark = document.body.getAttribute('data-theme') === 'dark';
-
-        const pts = dataSet.map(d => ({
-            x: String(d[xKey]),
-            y: parseFloat(String(d[yKey]).replace(/[^0-9.-]/g, ''))
-        })).filter(p => !isNaN(p.y));
-
-        const n = pts.length, ys = pts.map(p => p.y);
-        
-        // Regression Math
-        let sX=0, sY=0, sXY=0, sXX=0, sYY=0;
-        ys.forEach((y,x) => { sX+=x; sY+=y; sXY+=x*y; sXX+=x*x; sYY+=y*y; });
-        const m = (n*sXY - sX*sY)/(n*sXX - sX*sX) || 0, b = (sY - m*sX)/n;
-
-        // R-Squared (Confidence) Calculation
-        const rNum = (n * sXY) - (sX * sY);
-        const rDen = Math.sqrt(((n * sXX) - (sX * sX)) * ((n * sYY) - (sY * sY)));
-        const r2 = rDen === 0 ? 0 : Math.pow(rNum / rDen, 2);
-
-        // UI Updates
-        document.getElementById('vAvg').innerText = Math.round(ys.reduce((a,b)=>a+b,0)/n).toLocaleString();
-        document.getElementById('vFore').innerText = Math.round(m*(n + steps - 1)+b).toLocaleString();
-        document.getElementById('vConf').innerText = Math.round(r2 * 100) + "%";
-        document.getElementById('vConf').style.color = r2 > 0.7 ? "var(--success)" : r2 > 0.4 ? "var(--warning)" : "var(--danger)";
-        const t = document.getElementById('vTrend');
-        t.innerText = (m > 0 ? "+" : "") + Math.round(m); t.style.color = m > 0 ? "var(--success)" : "var(--danger)";
-
-        const dpr = 2;
-        canvas.width = canvas.offsetWidth * dpr; canvas.height = canvas.offsetHeight * dpr;
-        ctx.scale(dpr, dpr);
-        const w = canvas.offsetWidth, h = canvas.offsetHeight;
-        const pL = 80, pR = 150, pT = 60, pB = 100;
-        const finalProj = m * (n + steps - 1) + b;
-        const max = Math.max(...ys, finalProj, goal) * 1.3;
-        const stepSize = (w - pL - pR) / (n + steps - 1);
-
-        ctx.fillStyle = isDark ? "#1e293b" : "white"; ctx.fillRect(0,0,w,h);
-
-        // Grid
-        ctx.strokeStyle = isDark ? "#334155" : "#f1f5f9"; ctx.textAlign = "right"; ctx.fillStyle = "#94a3b8";
-        for(let i=0; i<=5; i++) {
-            const val = Math.round(max/5*i), y = (h-pB)-(val/max*(h-pB-pT));
-            ctx.beginPath(); ctx.moveTo(pL, y); ctx.lineTo(w-pR + (steps * stepSize), y); ctx.stroke();
-            ctx.fillText(val.toLocaleString(), pL-15, y+4);
-        }
-
-        // Regression Confidence Shading (Subtle Glow)
-        ctx.fillStyle = isDark ? "rgba(96, 165, 250, 0.05)" : "rgba(59, 130, 246, 0.05)";
-        ctx.beginPath();
-        ctx.moveTo(pL, (h-pB)-(b/max*(h-pB-pT)));
-        ctx.lineTo(pL + (n+steps-1)*stepSize, (h-pB)-(finalProj/max*(h-pB-pT)) - (20 * (1-r2)));
-        ctx.lineTo(pL + (n+steps-1)*stepSize, (h-pB)-(finalProj/max*(h-pB-pT)) + (20 * (1-r2)));
-        ctx.fill();
-
-        // Main Data Line
-        ctx.strokeStyle = isDark ? "#60a5fa" : "#0f172a"; ctx.lineWidth = 3; ctx.beginPath();
-        pts.forEach((p, i) => {
-            const x = pL+(i*stepSize), y = (h-pB)-(p.y/max*(h-pB-pT));
-            if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
-            ctx.fillStyle = isDark ? "#94a3b8" : "#1e293b"; ctx.textAlign = "center"; ctx.font = "bold 9px sans-serif";
-            ctx.fillText(Math.round(p.y).toLocaleString(), x, y - 12);
-            ctx.save(); ctx.translate(x, h-pB+30); ctx.rotate(Math.PI/4); ctx.textAlign="left"; ctx.fillText(p.x, 0, 0); ctx.restore();
+        document.getElementById('cp-file').addEventListener('change', function(e) {
+            const reader = new FileReader();
+            reader.onload = (f) => {
+                const workbook = XLSX.read(new Uint8Array(f.target.result), {type: 'array'});
+                cpData = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]]);
+                cpInit();
+            };
+            reader.readAsArrayBuffer(e.target.files[0]);
         });
-        ctx.stroke();
 
-        // Forecast Line
-        ctx.setLineDash([6,6]); ctx.strokeStyle = "var(--accent)"; ctx.beginPath();
-        ctx.moveTo(pL + (n-1)*stepSize, (h-pB)-(pts[n-1].y/max*(h-pB-pT)));
-        for(let s=1; s<=steps; s++) {
-            const px = pL + (n-1+s)*stepSize, py = (h-pB)-((m*(n-1+s)+b)/max*(h-pB-pT));
-            ctx.lineTo(px, py); ctx.stroke(); ctx.setLineDash([]);
-            ctx.fillStyle = "var(--accent)"; ctx.beginPath(); ctx.arc(px, py, 5, 0, 7); ctx.fill();
-            ctx.fillText(Math.round(m*(n-1+s)+b).toLocaleString(), px, py - 12);
-            ctx.setLineDash([6,6]); ctx.moveTo(px, py);
+        function cpInit() {
+            if(!cpData.length) return;
+            const keys = Object.keys(cpData[0]);
+            const sx = document.getElementById('cp-pickX'), sy = document.getElementById('cp-pickY');
+            sx.innerHTML = ''; sy.innerHTML = '';
+            keys.forEach(k => { sx.add(new Option(k,k)); sy.add(new Option(k,k)); });
+            if(keys.length > 1) sy.selectedIndex = 1;
+            
+            document.getElementById('cp-upload').style.display = 'none';
+            document.getElementById('cp-dash').style.display = 'grid';
+            document.getElementById('cp-main').style.display = 'block';
+            cpDraw();
         }
-    }
 
-    function exportChart() { const c = document.getElementById('pulseCanvas'); const l = document.createElement('a'); l.download = `Pulse_Analysis.png`; l.href = c.toDataURL('image/png', 1.0); l.click(); }
-    function exportData() { if(!dataSet.length) return; const ws = XLSX.utils.json_to_sheet(dataSet); const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "Analysis"); XLSX.writeFile(wb, `Data_Export.xlsx`); }
-</script>
-</body>
-</html>
+        const canvas = document.getElementById('pulseCanvas');
+        canvas.addEventListener('mousemove', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            cpMouse = { x: e.clientX - rect.left, y: e.clientY - rect.top };
+            cpDraw();
+        });
+
+        function cpDraw() {
+            const ctx = canvas.getContext('2d');
+            const xK = document.getElementById('cp-pickX').value;
+            const yK = document.getElementById('cp-pickY').value;
+            const steps = parseInt(document.getElementById('cp-steps').value) || 0;
+
+            const pts = cpData.map(d => ({
+                x: String(d[xK]),
+                y: parseFloat(String(d[yK]).replace(/[^0-9.-]/g, ''))
+            })).filter(p => !isNaN(p.y));
+
+            const n = pts.length;
+            if(!n) return;
+
+            // Stats Logic
+            let sX=0, sY=0, sXY=0, sXX=0;
+            pts.forEach((p, i) => { sX+=i; sY+=p.y; sXY+=i*p.y; sXX+=i*i; });
+            const m = (n*sXY - sX*sY)/(n*sXX - sX*sX) || 0, b = (sY - m*sX)/n;
+
+            document.getElementById('cp-vAvg').innerText = Math.round(sY/n).toLocaleString();
+            document.getElementById('cp-vFore').innerText = Math.round(m*(n+steps-1)+b).toLocaleString();
+
+            // Canvas Setup
+            const dpr = window.devicePixelRatio || 1;
+            canvas.width = canvas.offsetWidth * dpr; canvas.height = canvas.offsetHeight * dpr;
+            ctx.scale(dpr, dpr);
+            const w = canvas.offsetWidth, h = canvas.offsetHeight;
+            const pL = 50, pR = 50, pT = 40, pB = 60;
+            
+            const maxVal = Math.max(...pts.map(p=>p.y), m*(n+steps)+b) * 1.2;
+            const stepW = (w - pL - pR) / (n + steps - 1);
+            
+            ctx.clearRect(0,0,w,h);
+            cpPoints = [];
+
+            // Draw Y Axis Grid
+            ctx.strokeStyle = "#e2e8f0"; ctx.lineWidth = 1;
+            for(let i=0; i<=4; i++) {
+                let y = (h-pB) - (i/4 * (h-pB-pT));
+                ctx.beginPath(); ctx.moveTo(pL, y); ctx.lineTo(w-pR, y); ctx.stroke();
+            }
+
+            // Draw Lines
+            ctx.beginPath();
+            ctx.strokeStyle = "#3b82f6"; ctx.lineWidth = 3;
+            pts.forEach((p, i) => {
+                const vx = pL + (i * stepW);
+                const vy = (h-pB) - (p.y/maxVal * (h-pB-pT));
+                if(i === 0) ctx.moveTo(vx, vy); else ctx.lineTo(vx, vy);
+                cpPoints.push({x: vx, y: vy, val: p.y, label: p.x});
+            });
+            ctx.stroke();
+
+            // Forecast Extension
+            ctx.beginPath(); ctx.setLineDash([5,5]);
+            ctx.moveTo(cpPoints[n-1].x, cpPoints[n-1].y);
+            for(let i=1; i<=steps; i++) {
+                const curIdx = n-1+i;
+                const fx = pL + (curIdx * stepW);
+                const fv = m*curIdx + b;
+                const fy = (h-pB) - (fv/maxVal * (h-pB-pT));
+                ctx.lineTo(fx, fy);
+                cpPoints.push({x: fx, y: fy, val: fv, label: 'Forecast'});
+            }
+            ctx.stroke(); ctx.setLineDash([]);
+
+            // Hover Interaction
+            cpPoints.forEach(pt => {
+                const dist = Math.sqrt((cpMouse.x - pt.x)**2 + (cpMouse.y - pt.y)**2);
+                if(dist < 15) {
+                    ctx.fillStyle = "#3b82f6";
+                    ctx.beginPath(); ctx.arc(pt.x, pt.y, 6, 0, Math.PI*2); ctx.fill();
+                    ctx.strokeStyle = "white"; ctx.lineWidth = 2; ctx.stroke();
+                    
+                    ctx.fillStyle = "#0f172a"; ctx.font = "bold 12px sans-serif"; ctx.textAlign = "center";
+                    ctx.fillText(Math.round(pt.val).toLocaleString(), pt.x, pt.y - 15);
+                }
+            });
+        }
+    </script>
+</div>
