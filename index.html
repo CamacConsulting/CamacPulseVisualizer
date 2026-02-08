@@ -1,1 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>CamacPulseVisualizer | Universal Data Analyst</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        :root { --teal: #41797e; --navy: #001935; --bg: #f4f7f9; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg); margin: 0; padding: 20px; color: #333; }
+        .app-container { max-width: 900px; margin: auto; background: white; padding: 30px; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); border-top: 8px solid var(--teal); }
+        
+        .header { text-align: center; margin-bottom: 25px; }
+        .header h1 { color: var(--navy); margin: 0; font-size: 28px; letter-spacing: 1px; }
+        
+        /* Guide Note */
+        .file-guide { background: #eef4f4; border-left: 4px solid var(--teal); padding: 15px; margin-bottom: 25px; font-size: 13px; line-height: 1.5; color: #444; }
+        .file-guide strong { color: var(--navy); text-transform: uppercase; font-size: 11px; display: block; margin-bottom: 5px; }
+        
+        .upload-zone { border: 2px dashed #ccc; padding: 40px; border-radius: 10px; cursor: pointer; transition: 0.3s; background: #fafafa; margin-bottom: 20px; text-align: center; }
+        .upload-zone:hover { border-color: var(--teal); background: #f0f7f7; }
+        
+        .controls { display: none; justify-content: center; gap: 15px; margin-bottom: 20px; }
+        .btn { padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; font-size: 12px; transition: 0.2s; }
+        .btn-teal { background: var(--teal); color: white; }
+        .btn-navy { background: var(--navy); color: white; }
+        
+        canvas { width: 100%; height: 400px; display: block; background: #fff; border: 1px solid #eee; border-radius: 8px; }
+        .status-bar { font-size: 12px; color: #777; text-align: center; margin-top: 15px; padding: 10px; border-radius: 5px; }
+        .status-ok { background: #d4edda; color: #155724; font-weight: bold; }
+    </style>
+</head>
+<body>
 
+<div class="app-container">
+    <div class="header">
+        <h1>CamacPulseVisualizer</h1>
+    </div>
+
+    <div class="file-guide">
+        <strong>Compatibility & Format Guide</strong>
+        * **Accepted Files:** Microsoft Excel (.xlsx, .xls), CSV (.csv), or Text (.txt).
+        * **Required Layout:** Use **Column A** for labels (Dates, Names, Years) and **Column B** for the numerical values you wish to analyze.
+        * **Note:** If using Excel, the visualizer will automatically read the first sheet in your workbook.
+    </div>
+
+    <div class="upload-zone" id="dropZone" onclick="document.getElementById('fileIn').click()">
+        <strong style="color: var(--navy);">Click to Upload Data</strong>
+        <p style="font-size: 12px; color: #888; margin-top: 8px;">Drag and drop your spreadsheet here to map the pulse.</p>
+    </div>
+    <input type="file" id="fileIn" style="display:none" accept=".xlsx, .xls, .csv, .txt">
+
+    <div class="controls" id="toolBar">
+        <button class="btn btn-teal" onclick="setMode('line')">LINE ANALYSIS</button>
+        <button class="btn btn-navy" onclick="setMode('bar')">BAR DISTRIBUTION</button>
+    </div>
+
+    <canvas id="pulseCanvas"></canvas>
+    <div class="status-bar" id="statusMsg">System Active. Awaiting Input.</div>
+</div>
+
+<script>
+    let currentData = [];
+    let chartMode = 'line';
+    const canvas = document.getElementById('pulseCanvas');
+    const ctx = canvas.getContext('2d');
+
+    document.getElementById('fileIn').onchange = function(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+        
+        const reader = new FileReader();
+        reader.onload = function(evt) {
+            try {
+                const data = new Uint8Array(evt.target.result);
+                const workbook = XLSX.read(data, {type: 'array'});
+                const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+                const json = XLSX.utils.sheet_to_json(firstSheet, {header: 1});
+                
+                // Map Data: Column A (0) is Label, Column B (1) is Value
+                currentData = json.map(row => ({
+                    label: String(row[0] || ""), 
+                    val: parseFloat(row[1]) 
+                })).filter(item => !isNaN(item.val));
+
+                if (currentData.length > 0) {
+                    document.getElementById('toolBar').style.display = 'flex';
+                    const msg = document.getElementById('statusMsg');
+                    msg.innerText = `SUCCESS: "${file.name}" mapped successfully.`;
+                    msg.className = "status-bar status-ok";
+                    render();
+                } else {
+                    throw new Error("No numeric data found in Column B.");
+                }
+            } catch (err) {
+                document.getElementById('statusMsg').innerText = "ERROR: Could not parse file. Check Column B for numbers.";
+                document.getElementById('statusMsg').className = "status-bar";
+            }
+        };
+        reader.readAsArrayBuffer(file);
+    };
+
+    function setMode(m) { chartMode = m; render(); }
+
+    function render() {
+        const dpr = window.devicePixelRatio || 1;
+        canvas.width = canvas.offsetWidth * dpr;
+        canvas.height = canvas.offsetHeight * dpr;
+        ctx.scale(dpr, dpr);
+
+        const w = canvas.offsetWidth;
+        const h = canvas.offsetHeight;
+        const pad = 60;
+        const vals = currentData.map(d => d.val);
+        const max = Math.max(...vals) * 1.2;
+        const min = Math.min(...vals) < 0 ? Math.min(...vals) * 1.1 : 0;
+        const range = max - min;
+        const step = (w - (pad * 2)) / (currentData.length - 1 || 1);
+
+        ctx.clearRect(0, 0, w, h);
+
+        // Draw Line Pulse
+        if (chartMode === 'line') {
+            ctx.beginPath(); ctx.strokeStyle = "#41797e"; ctx.lineWidth = 4;
+            currentData.forEach((d, i) => {
+                const x = pad + (i * step);
+                const y = (h - pad) - ((d.val - min) / range * (h - pad * 2));
+                if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+            });
+            ctx.stroke();
+        }
+
+        // Draw Nodes/Bars
+        currentData.forEach((d, i) => {
+            const x = pad + (i * step);
+            const y = (h - pad) - ((d.val - min) / range * (h - pad * 2));
+            
+            if (chartMode === 'bar') {
+                ctx.fillStyle = "#001935";
+                const bw = Math.max(step * 0.6, 10);
+                ctx.fillRect(x - bw/2, y, bw, (h-pad) - y);
+            } else {
+                ctx.fillStyle = "#41797e";
+                ctx.beginPath(); ctx.arc(x, y, 6, 0, Math.PI*2); ctx.fill();
+            }
+            
+            // Labels for smaller datasets
+            if (currentData.length < 15) {
+                ctx.fillStyle = "#333";
+                ctx.font = "bold 11px sans-serif";
+                ctx.textAlign = "center";
+                ctx.fillText(Math.round(d.val).toLocaleString(), x, y - 12);
+                ctx.font = "9px sans-serif";
+                ctx.fillText(d.label, x, h - pad + 20);
+            }
+        });
+    }
+</script>
+</body>
+</html>
