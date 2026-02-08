@@ -3,11 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CamacPulse | Enterprise Analytics Suite</title>
+    <title>CamacPulse | Enterprise Analytics</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
         :root { 
-            --primary: #0f172a; --accent: #3b82f6; --success: #10b981; --danger: #f43f5e;
+            --primary: #0f172a; --accent: #3b82f6; --success: #10b981; --danger: #f43f5e; --warning: #f59e0b;
             --text-main: #1e293b; --text-muted: #64748b; --bg-subtle: #f8fafc;
             --card-bg: #ffffff; --border: #e2e8f0; --ctrl-bg: #f8fafc;
             --card-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05);
@@ -20,117 +20,72 @@
             --card-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3);
         }
 
-        body { 
-            font-family: 'Inter', system-ui, sans-serif; 
-            background: var(--bg-subtle); color: var(--text-main); 
-            margin: 0; padding-bottom: 100px; transition: all 0.3s;
-        }
-
-        header { 
-            background: var(--card-bg); padding: 1.25rem 2rem; 
-            display: flex; justify-content: space-between; align-items: center;
-            border-bottom: 1px solid var(--border);
-        }
-
-        .container { max-width: 1400px; margin: 2rem auto; padding: 0 2rem; }
-
-        /* Component Styles */
-        .upload-card { 
-            background: var(--card-bg); padding: 80px 40px; border-radius: 16px; 
-            box-shadow: var(--card-shadow); border: 2px dashed var(--border); text-align: center; 
-        }
-
-        #statsDash { display: none; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; margin-bottom: 1.5rem; }
-
-        .card { 
-            background: var(--card-bg); padding: 1.5rem; border-radius: 12px; 
-            box-shadow: var(--card-shadow); border: 1px solid var(--border);
-        }
-
-        .card-label { font-size: 0.7rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 0.5rem;}
-        .card-val { font-size: 2rem; font-weight: 800; }
+        body { font-family: 'Inter', system-ui, sans-serif; background: var(--bg-subtle); color: var(--text-main); margin: 0; padding-bottom: 120px; transition: all 0.3s; }
+        header { background: var(--card-bg); padding: 1rem 2rem; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); }
+        .container { max-width: 1600px; margin: 2rem auto; padding: 0 2rem; }
+        .upload-card { background: var(--card-bg); padding: 60px; border-radius: 16px; box-shadow: var(--card-shadow); border: 2px dashed var(--border); text-align: center; }
+        
+        #statsDash { display: none; grid-template-columns: repeat(4, 1fr); gap: 1.5rem; margin-bottom: 1.5rem; }
+        .card { background: var(--card-bg); padding: 1.25rem; border-radius: 12px; box-shadow: var(--card-shadow); border: 1px solid var(--border); }
+        .card-label { font-size: 0.65rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 0.5rem; letter-spacing: 0.05em;}
+        .card-val { font-size: 1.6rem; font-weight: 800; }
 
         .main-view { display: none; background: var(--card-bg); padding: 1.5rem; border-radius: 16px; box-shadow: var(--card-shadow); border: 1px solid var(--border); }
-        
-        .ctrl-row { 
-            display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; 
-            background: var(--ctrl-bg); padding: 1.5rem; border-radius: 12px; 
-            margin-bottom: 1.5rem; border: 1px solid var(--border);
-        }
-        
-        select, input[type="number"] { 
-            width: 100%; padding: 0.75rem; border-radius: 8px; border: 1px solid var(--border); 
-            background: var(--card-bg); color: var(--text-main);
-        }
+        .ctrl-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.5rem; background: var(--ctrl-bg); padding: 1.5rem; border-radius: 12px; margin-bottom: 1.5rem; border: 1px solid var(--border); }
+        label { font-size: 0.75rem; font-weight: 700; color: var(--text-muted); display: block; margin-bottom: 5px; }
+        select, input { width: 100%; padding: 0.75rem; border-radius: 8px; border: 1px solid var(--border); background: var(--card-bg); color: var(--text-main); font-size: 0.85rem; }
 
         canvas { width: 100%; height: 600px; display: block; }
 
-        /* Interactive Elements */
-        .nav-bar { 
-            position: fixed; bottom: 0; left: 0; width: 100%; 
-            background: var(--card-bg); border-top: 1px solid var(--border); 
-            padding: 1.25rem 0; text-align: center; z-index: 1000;
-        }
-
-        .btn { 
-            background: var(--accent); color: white; padding: 12px 24px; border-radius: 8px; 
-            border: none; font-weight: 600; cursor: pointer; transition: all 0.2s;
-        }
+        .nav-bar { position: fixed; bottom: 0; left: 0; width: 100%; background: var(--card-bg); border-top: 1px solid var(--border); padding: 1.25rem 0; text-align: center; z-index: 1000; }
+        .btn { background: var(--accent); color: white; padding: 12px 24px; border-radius: 8px; border: none; font-weight: 600; cursor: pointer; transition: all 0.2s; font-size: 0.85rem; }
         .btn-outline { background: transparent; color: var(--text-main); border: 1px solid var(--border); margin-right: 8px; }
 
-        .theme-toggle {
-            cursor: pointer; padding: 8px 12px; border-radius: 20px; background: var(--ctrl-bg);
-            border: 1px solid var(--border); font-size: 0.75rem; font-weight: 700; color: var(--text-muted);
-        }
-
-        @media print {
-            .nav-bar, .theme-toggle, .ctrl-row, #uploadPanel, #printBtn { display: none !important; }
-            body { background: white !important; color: black !important; }
-            .card { box-shadow: none !important; border: 1px solid #eee !important; }
-        }
+        @media print { .nav-bar, .ctrl-row, #uploadPanel, #themeBtn { display: none !important; } }
     </style>
 </head>
 <body data-theme="light">
 
 <header>
-    <strong>CamacPulse <span style="color:var(--accent)">Analytics</span></strong>
+    <strong>CamacPulse <span style="color:var(--accent)">Intelligence</span></strong>
     <div style="display:flex; align-items:center; gap: 15px;">
-        <div id="themeBtn" class="theme-toggle" onclick="toggleTheme()">NIGHT MODE</div>
-        <button id="printBtn" class="btn btn-outline" style="padding: 6px 12px; font-size: 11px;" onclick="window.print()">PRINT REPORT</button>
+        <div id="themeBtn" style="cursor:pointer; font-size: 0.75rem; font-weight:700; color:var(--text-muted);" onclick="toggleTheme()">NIGHT MODE</div>
+        <button class="btn btn-outline" style="padding: 6px 12px; font-size: 11px;" onclick="window.print()">PRINT</button>
     </div>
 </header>
 
 <div class="container">
     <div class="upload-card" id="uploadPanel">
-        <h2 style="margin:0 0 10px 0; font-size: 2rem; font-weight: 800;">Intelligence Import</h2>
-        <p style="color: var(--text-muted);">Select a file to begin trajectory analysis.</p>
+        <h2 style="margin:0 0 10px 0;">Analytical Engine</h2>
+        <p style="color: var(--text-muted);">Upload XLSX/CSV to generate trajectory confidence models.</p>
         <input type="file" id="filePicker" accept=".xlsx, .xls, .csv">
     </div>
 
     <div id="statsDash">
-        <div class="card"><div class="card-label">Mean Analysis</div><div class="card-val" id="vAvg">0</div></div>
-        <div class="card"><div class="card-label">Trajectory</div><div class="card-val" id="vTrend">---</div></div>
-        <div class="card"><div class="card-label">Forecast</div><div class="card-val" id="vFore">0</div></div>
+        <div class="card"><div class="card-label">Avg. Performance</div><div class="card-val" id="vAvg">0</div></div>
+        <div class="card"><div class="card-label">Trajectory Slope</div><div class="card-val" id="vTrend">---</div></div>
+        <div class="card"><div class="card-label">Trend Confidence ($R^2$)</div><div class="card-val" id="vConf">0%</div></div>
+        <div class="card"><div class="card-label">Horizon Projection</div><div class="card-val" id="vFore">0</div></div>
     </div>
 
     <div class="main-view" id="mainApp">
         <div class="ctrl-row">
-            <div><label>Labels</label><select id="pickX" onchange="draw()"></select></div>
-            <div><label>Values</label><select id="pickY" onchange="draw()"></select></div>
-            <div><label>Target</label><input type="number" id="pickGoal" oninput="draw()" placeholder="0"></div>
+            <div><label>X-Labels</label><select id="pickX" onchange="draw()"></select></div>
+            <div><label>Y-Values</label><select id="pickY" onchange="draw()"></select></div>
+            <div><label>KPI Target</label><input type="number" id="pickGoal" oninput="draw()" value="0"></div>
+            <div><label>Forecast Steps</label><input type="number" id="pickSteps" oninput="draw()" value="3" min="1" max="12"></div>
         </div>
         <canvas id="pulseCanvas"></canvas>
     </div>
 </div>
 
 <div class="nav-bar">
-    <button class="btn btn-outline" onclick="exportData()">Export (.XLSX)</button>
-    <button class="btn btn-outline" onclick="exportChart()">Save (.PNG)</button>
-    <button id="fullViewBtn" class="btn" onclick="openFullView()">View Full Window ↗</button>
+    <button class="btn btn-outline" onclick="exportData()">Export Data</button>
+    <button class="btn btn-outline" onclick="exportChart()">Save PNG</button>
+    <button class="btn" onclick="window.open(window.location.href, '_blank')">Expand Workspace ↗</button>
 </div>
 
 <script>
-    const picker = document.getElementById('filePicker');
     let dataSet = [];
 
     function toggleTheme() {
@@ -141,37 +96,22 @@
         if(dataSet.length) draw();
     }
 
-    // Use localStorage so the new window can access the data
     window.addEventListener('load', () => {
         const saved = localStorage.getItem('pulseData');
-        if (saved) {
-            dataSet = JSON.parse(saved);
-            startApp();
-        }
+        if (saved) { dataSet = JSON.parse(saved); startApp(); }
     });
 
-    picker.addEventListener('change', (e) => {
+    document.getElementById('filePicker').addEventListener('change', (e) => {
         const file = e.target.files[0];
-        if (!file) return;
         const reader = new FileReader();
         reader.onload = (f) => {
-            try {
-                const workbook = XLSX.read(new Uint8Array(f.target.result), {type: 'array'});
-                dataSet = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]]);
-                if (dataSet.length > 0) {
-                    localStorage.setItem('pulseData', JSON.stringify(dataSet));
-                    startApp();
-                }
-            } catch(err) { alert("Format Error."); }
+            const workbook = XLSX.read(new Uint8Array(f.target.result), {type: 'array'});
+            dataSet = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]]);
+            localStorage.setItem('pulseData', JSON.stringify(dataSet));
+            startApp();
         };
         reader.readAsArrayBuffer(file);
     });
-
-    function openFullView() {
-        // This opens the current URL in a new window. 
-        // Since we use localStorage, the new window will see the data and "startApp()" automatically.
-        window.open(window.location.href, '_blank');
-    }
 
     function startApp() {
         if(!dataSet.length) return;
@@ -180,7 +120,6 @@
         sx.innerHTML = ''; sy.innerHTML = '';
         keys.forEach(k => { sx.add(new Option(k,k)); sy.add(new Option(k,k)); });
         if(keys.length > 1) sy.selectedIndex = 1;
-
         document.getElementById('uploadPanel').style.display = 'none';
         document.getElementById('statsDash').style.display = 'grid';
         document.getElementById('mainApp').style.display = 'block';
@@ -191,6 +130,7 @@
         const canvas = document.getElementById('pulseCanvas'), ctx = canvas.getContext('2d');
         const xKey = document.getElementById('pickX').value, yKey = document.getElementById('pickY').value;
         const goal = parseFloat(document.getElementById('pickGoal').value) || 0;
+        const steps = parseInt(document.getElementById('pickSteps').value) || 1;
         const isDark = document.body.getAttribute('data-theme') === 'dark';
 
         const pts = dataSet.map(d => ({
@@ -199,79 +139,77 @@
         })).filter(p => !isNaN(p.y));
 
         const n = pts.length, ys = pts.map(p => p.y);
-        let sX=0, sY=0, sXY=0, sXX=0;
-        ys.forEach((y,x) => { sX+=x; sY+=y; sXY+=x*y; sXX+=x*x; });
+        
+        // Regression Math
+        let sX=0, sY=0, sXY=0, sXX=0, sYY=0;
+        ys.forEach((y,x) => { sX+=x; sY+=y; sXY+=x*y; sXX+=x*x; sYY+=y*y; });
         const m = (n*sXY - sX*sY)/(n*sXX - sX*sX) || 0, b = (sY - m*sX)/n;
 
+        // R-Squared (Confidence) Calculation
+        const rNum = (n * sXY) - (sX * sY);
+        const rDen = Math.sqrt(((n * sXX) - (sX * sX)) * ((n * sYY) - (sY * sY)));
+        const r2 = rDen === 0 ? 0 : Math.pow(rNum / rDen, 2);
+
+        // UI Updates
         document.getElementById('vAvg').innerText = Math.round(ys.reduce((a,b)=>a+b,0)/n).toLocaleString();
-        document.getElementById('vFore').innerText = Math.round(m*n+b).toLocaleString();
+        document.getElementById('vFore').innerText = Math.round(m*(n + steps - 1)+b).toLocaleString();
+        document.getElementById('vConf').innerText = Math.round(r2 * 100) + "%";
+        document.getElementById('vConf').style.color = r2 > 0.7 ? "var(--success)" : r2 > 0.4 ? "var(--warning)" : "var(--danger)";
         const t = document.getElementById('vTrend');
-        t.innerText = m > 0 ? "Upward" : "Downward"; t.style.color = m > 0 ? "var(--success)" : "var(--danger)";
+        t.innerText = (m > 0 ? "+" : "") + Math.round(m); t.style.color = m > 0 ? "var(--success)" : "var(--danger)";
 
         const dpr = 2;
         canvas.width = canvas.offsetWidth * dpr; canvas.height = canvas.offsetHeight * dpr;
         ctx.scale(dpr, dpr);
         const w = canvas.offsetWidth, h = canvas.offsetHeight;
-        
-        const pL = 80, pR = 250, pT = 60, pB = 100;
-        const max = Math.max(...ys, (m*n+b), goal) * 1.3;
-        const step = (w - pL - pR) / (n - 1 || 1);
+        const pL = 80, pR = 150, pT = 60, pB = 100;
+        const finalProj = m * (n + steps - 1) + b;
+        const max = Math.max(...ys, finalProj, goal) * 1.3;
+        const stepSize = (w - pL - pR) / (n + steps - 1);
 
-        ctx.fillStyle = isDark ? "#1e293b" : "white";
-        ctx.fillRect(0,0,w,h);
+        ctx.fillStyle = isDark ? "#1e293b" : "white"; ctx.fillRect(0,0,w,h);
 
-        // Grid lines
-        ctx.strokeStyle = isDark ? "#334155" : "#f1f5f9";
-        ctx.fillStyle = "#94a3b8"; ctx.font = "500 11px sans-serif"; ctx.textAlign = "right";
+        // Grid
+        ctx.strokeStyle = isDark ? "#334155" : "#f1f5f9"; ctx.textAlign = "right"; ctx.fillStyle = "#94a3b8";
         for(let i=0; i<=5; i++) {
             const val = Math.round(max/5*i), y = (h-pB)-(val/max*(h-pB-pT));
-            ctx.beginPath(); ctx.moveTo(pL, y); ctx.lineTo(w-pR, y); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(pL, y); ctx.lineTo(w-pR + (steps * stepSize), y); ctx.stroke();
             ctx.fillText(val.toLocaleString(), pL-15, y+4);
         }
 
-        // Pulse line
+        // Regression Confidence Shading (Subtle Glow)
+        ctx.fillStyle = isDark ? "rgba(96, 165, 250, 0.05)" : "rgba(59, 130, 246, 0.05)";
+        ctx.beginPath();
+        ctx.moveTo(pL, (h-pB)-(b/max*(h-pB-pT)));
+        ctx.lineTo(pL + (n+steps-1)*stepSize, (h-pB)-(finalProj/max*(h-pB-pT)) - (20 * (1-r2)));
+        ctx.lineTo(pL + (n+steps-1)*stepSize, (h-pB)-(finalProj/max*(h-pB-pT)) + (20 * (1-r2)));
+        ctx.fill();
+
+        // Main Data Line
         ctx.strokeStyle = isDark ? "#60a5fa" : "#0f172a"; ctx.lineWidth = 3; ctx.beginPath();
         pts.forEach((p, i) => {
-            const x = pL+(i*step), y = (h-pB)-(p.y/max*(h-pB-pT));
+            const x = pL+(i*stepSize), y = (h-pB)-(p.y/max*(h-pB-pT));
             if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
-            ctx.save(); ctx.translate(x, h-pB+30); ctx.rotate(Math.PI/4);
-            ctx.fillStyle = "#94a3b8"; ctx.textAlign="left"; ctx.fillText(p.x, 0, 0); ctx.restore();
+            ctx.fillStyle = isDark ? "#94a3b8" : "#1e293b"; ctx.textAlign = "center"; ctx.font = "bold 9px sans-serif";
+            ctx.fillText(Math.round(p.y).toLocaleString(), x, y - 12);
+            ctx.save(); ctx.translate(x, h-pB+30); ctx.rotate(Math.PI/4); ctx.textAlign="left"; ctx.fillText(p.x, 0, 0); ctx.restore();
         });
         ctx.stroke();
 
-        // Forecast
-        const fy = (h-pB)-((m*n+b)/max*(h-pB-pT)), fx = pL+(n*step);
-        ctx.setLineDash([6,6]); ctx.strokeStyle = "#94a3b8"; ctx.beginPath();
-        ctx.moveTo(pL+((n-1)*step), (h-pB)-(pts[n-1].y/max*(h-pB-pT))); ctx.lineTo(fx, fy); ctx.stroke();
-        ctx.setLineDash([]); ctx.fillStyle = "#3b82f6"; ctx.beginPath(); ctx.arc(fx, fy, 6, 0, 7); ctx.fill();
-
-        // Points
-        pts.forEach((p, i) => {
-            const x = pL+(i*step), y = (h-pB)-(p.y/max*(h-pB-pT));
-            ctx.fillStyle = isDark ? "#1e293b" : "white";
-            ctx.beginPath(); ctx.arc(x,y,4,0,7); ctx.fill();
-            ctx.strokeStyle = isDark ? "#60a5fa" : "#0f172a"; ctx.lineWidth = 2; ctx.stroke();
-        });
+        // Forecast Line
+        ctx.setLineDash([6,6]); ctx.strokeStyle = "var(--accent)"; ctx.beginPath();
+        ctx.moveTo(pL + (n-1)*stepSize, (h-pB)-(pts[n-1].y/max*(h-pB-pT)));
+        for(let s=1; s<=steps; s++) {
+            const px = pL + (n-1+s)*stepSize, py = (h-pB)-((m*(n-1+s)+b)/max*(h-pB-pT));
+            ctx.lineTo(px, py); ctx.stroke(); ctx.setLineDash([]);
+            ctx.fillStyle = "var(--accent)"; ctx.beginPath(); ctx.arc(px, py, 5, 0, 7); ctx.fill();
+            ctx.fillText(Math.round(m*(n-1+s)+b).toLocaleString(), px, py - 12);
+            ctx.setLineDash([6,6]); ctx.moveTo(px, py);
+        }
     }
 
-    function exportChart() {
-        const c = document.getElementById('pulseCanvas');
-        const l = document.createElement('a');
-        l.download = `Pulse_Visual.png`;
-        l.href = c.toDataURL('image/png', 1.0);
-        l.click();
-    }
-
-    function exportData() {
-        if(!dataSet.length) return;
-        const xKey = document.getElementById('pickX').value, yKey = document.getElementById('pickY').value;
-        const ws = XLSX.utils.json_to_sheet(dataSet);
-        const wb = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(wb, ws, "Analysis");
-        XLSX.writeFile(wb, `CamacPulse_Data.xlsx`);
-    }
-
-    window.addEventListener('resize', () => { if(dataSet.length) draw(); });
+    function exportChart() { const c = document.getElementById('pulseCanvas'); const l = document.createElement('a'); l.download = `Pulse_Analysis.png`; l.href = c.toDataURL('image/png', 1.0); l.click(); }
+    function exportData() { if(!dataSet.length) return; const ws = XLSX.utils.json_to_sheet(dataSet); const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "Analysis"); XLSX.writeFile(wb, `Data_Export.xlsx`); }
 </script>
 </body>
 </html>
