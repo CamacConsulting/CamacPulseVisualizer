@@ -2,41 +2,35 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>CamacPulseVisualizer | Universal Predictive</title>
+    <title>CamacPulseVisualizer | Elite Analytics</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
-        :root { --teal: #41797e; --navy: #001935; --bg: #f4f7f9; --text: #333; }
-        body { font-family: -apple-system, sans-serif; background: var(--bg); color: var(--text); padding: 20px 20px 120px 20px; }
-        .container { max-width: 900px; margin: auto; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); border-top: 5px solid var(--teal); }
+        :root { --teal: #41797e; --navy: #001935; --bg: #f4f7f9; --text: #222; --red: #d9534f; }
+        body { font-family: system-ui, -apple-system, sans-serif; background: var(--bg); color: var(--text); padding: 20px 20px 100px 20px; }
+        .container { max-width: 1000px; margin: auto; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 10px 40px rgba(0,0,0,0.1); border-top: 6px solid var(--teal); }
         
-        /* Upload Zone */
-        .drop-zone { border: 2px dashed var(--teal); padding: 50px; text-align: center; cursor: pointer; border-radius: 10px; background: #fafafa; margin-bottom: 20px; transition: 0.2s; }
-        .drop-zone:hover { background: #f0f7f7; border-style: solid; }
+        /* Step 1: Upload */
+        .upload-box { border: 2px dashed var(--teal); padding: 40px; text-align: center; cursor: pointer; border-radius: 10px; background: #fafafa; margin-bottom: 20px; }
         
         /* Stats Dashboard */
-        .dashboard { display: none; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-bottom: 25px; }
-        .card { background: var(--bg); padding: 15px; border-radius: 8px; text-align: center; border: 1px solid #ddd; }
-        .card small { font-size: 10px; font-weight: bold; color: #777; text-transform: uppercase; display: block; margin-bottom: 5px; }
-        .card div { font-size: 18px; font-weight: bold; color: var(--navy); }
+        .dashboard { display: none; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 25px; }
+        .card { background: var(--navy); color: white; padding: 20px; border-radius: 8px; text-align: center; }
+        .card div { font-size: 22px; font-weight: bold; margin-top: 5px; color: #5aa4ab; }
 
         /* Controls */
-        #ui { display: none; }
-        .selector-box { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; background: #fdfdfd; padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #eee; }
-        select { width: 100%; padding: 12px; border-radius: 6px; border: 1px solid #ccc; font-size: 14px; }
-        
-        /* Chart */
-        canvas { width: 100%; height: 450px; background: #fff; border: 1px solid #eee; border-radius: 8px; }
+        .ui-controls { display: none; background: #fff; border: 1px solid #ddd; padding: 20px; border-radius: 8px; margin-bottom: 20px; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; margin-bottom: 15px; }
+        select, input { width: 100%; padding: 12px; border-radius: 6px; border: 1px solid #ccc; font-weight: bold; box-sizing: border-box; }
 
-        .btn-row { display: flex; gap: 10px; justify-content: center; margin-bottom: 20px; }
-        button { padding: 12px 24px; border-radius: 6px; border: none; font-weight: bold; cursor: pointer; transition: 0.2s; }
-        .btn-main { background: var(--teal); color: white; }
-        .btn-sec { background: var(--navy); color: white; }
+        canvas { width: 100%; height: 500px; background: #fff; border: 1px solid #eee; border-radius: 8px; }
+        .btn-group { display: flex; gap: 10px; justify-content: center; margin-top: 15px; flex-wrap: wrap; }
+        .btn { padding: 12px 25px; border-radius: 6px; border: none; font-weight: bold; cursor: pointer; text-transform: uppercase; font-size: 11px; }
+        .btn-teal { background: var(--teal); color: white; }
+        .btn-navy { background: var(--navy); color: white; }
 
-        /* Error Log (Internal Debugger) */
-        #log { font-size: 11px; color: red; margin-top: 10px; text-align: center; }
-
-        .footer { position: fixed; bottom: 0; left: 0; width: 100%; background: var(--navy); padding: 20px; text-align: center; }
-        .footer a { color: white; text-decoration: none; font-weight: bold; letter-spacing: 1px; }
+        /* Fixed Footer Fix */
+        .footer { position: fixed; bottom: 0; left: 0; width: 100%; background: var(--navy); padding: 15px; text-align: center; border-top: 3px solid var(--teal); z-index: 9999; }
+        .footer a { color: white; text-decoration: none; font-weight: bold; }
     </style>
 </head>
 <body>
@@ -44,29 +38,30 @@
 <div class="container">
     <h1 style="margin-top:0; color:var(--navy)">CamacPulseVisualizer</h1>
     
-    <div class="drop-zone" id="dropZone">
-        <strong id="prompt">CLICK OR DROP EXCEL/CSV FILE HERE</strong>
-        <p style="font-size: 12px; margin-top: 10px;">The tool will automatically detect your columns and predict trends.</p>
+    <div class="upload-box" id="dropZone">
+        <strong>STEP 1: UPLOAD DATA</strong>
+        <p>Drop Excel/CSV here to activate advanced charting</p>
+        <input type="file" id="fileIn" style="display:none" accept=".xlsx, .xls, .csv">
     </div>
-    <input type="file" id="fileInput" style="display:none" accept=".xlsx, .xls, .csv">
-    <div id="log"></div>
 
-    <div id="ui">
-        <div class="dashboard" id="dashboard">
-            <div class="card"><small>Average Metric</small><div id="avg">0</div></div>
-            <div class="card"><small>Pulse Direction</small><div id="trend">--</div></div>
-            <div class="card"><small>Predictive Forecast</small><div id="forecast">0</div></div>
+    <div id="mainUI" style="display:none;">
+        <div class="dashboard">
+            <div class="card"><small>AVERAGE METRIC</small><div id="statAvg">0</div></div>
+            <div class="card"><small>PULSE TREND</small><div id="statTrend">Neutral</div></div>
+            <div class="card"><small>PROJECTED NEXT</small><div id="statForecast">0</div></div>
         </div>
 
-        <div class="selector-box">
-            <div><label style="font-size:12px; font-weight:bold">X-Axis (Labels)</label><select id="selX"></select></div>
-            <div><label style="font-size:12px; font-weight:bold">Y-Axis (Data)</label><select id="selY"></select></div>
-        </div>
-
-        <div class="btn-row">
-            <button class="btn-main" id="btnLine">📈 PULSE LINE</button>
-            <button class="btn-main" id="btnBar">📊 GROWTH BARS</button>
-            <button class="btn-sec" onclick="exportImg()">💾 EXPORT PNG</button>
+        <div class="ui-controls">
+            <div class="grid">
+                <div><label><small>X-AXIS (LABELS)</small></label><select id="selX" onchange="process()"></select></div>
+                <div><label><small>Y-AXIS (DATA)</small></label><select id="selY" onchange="process()"></select></div>
+                <div><label><small>ANNUAL TARGET LINE</small></label><input type="number" id="targetVal" placeholder="Enter Goal..." oninput="process()"></div>
+            </div>
+            <div class="btn-group">
+                <button class="btn btn-teal" onclick="setMode('line')">Pulse Line</button>
+                <button class="btn btn-teal" onclick="setMode('bar')">Growth Bars</button>
+                <button class="btn btn-navy" onclick="exportData()">Export PNG Report</button>
+            </div>
         </div>
 
         <canvas id="pulseCanvas"></canvas>
@@ -74,169 +69,124 @@
 </div>
 
 <div class="footer">
-    <a href="https://camacconsulting.github.io/CamacPulseVisualizer/" target="_blank">OPEN FULL SITE VIEW ↗</a>
+    <a href="javascript:void(0)" onclick="window.open(window.location.href, '_blank')">OPEN IN NEW TAB / FULL WINDOW ↗</a>
 </div>
 
 <script>
-    const log = document.getElementById('log');
-    const ui = document.getElementById('ui');
-    const dashboard = document.getElementById('dashboard');
-    let masterData = [];
-    let activeMode = 'line';
+    let rawData = [], chartMode = 'line';
+    const canvas = document.getElementById('pulseCanvas'), ctx = canvas.getContext('2d');
 
-    // 1. ROBUST FILE UPLOAD ENGINE
-    document.getElementById('dropZone').onclick = () => document.getElementById('fileInput').click();
-    document.getElementById('fileInput').onchange = (e) => handleFile(e.target.files[0]);
-
-    function handleFile(file) {
-        if (!file) return;
-        log.innerText = ""; // Clear errors
+    document.getElementById('dropZone').onclick = () => document.getElementById('fileIn').click();
+    document.getElementById('fileIn').onchange = (e) => {
         const reader = new FileReader();
-        
-        reader.onload = function(e) {
-            try {
-                const arr = new Uint8Array(e.target.result);
-                const wb = XLSX.read(arr, {type: 'array', cellDates: true});
-                const firstSheet = wb.Sheets[wb.SheetNames[0]];
-                masterData = XLSX.utils.sheet_to_json(firstSheet, {defval: ""});
-
-                if (masterData.length > 0) {
-                    initUI(Object.keys(masterData[0]));
-                } else {
-                    log.innerText = "Error: This sheet appears to be empty.";
-                }
-            } catch (err) {
-                log.innerText = "Error: Could not read file. Ensure it is a valid Excel or CSV.";
-                console.error(err);
-            }
+        reader.onload = (evt) => {
+            const wb = XLSX.read(new Uint8Array(evt.target.result), {type: 'array'});
+            rawData = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]);
+            if(rawData.length > 0) setupUI();
         };
-        reader.readAsArrayBuffer(file);
+        reader.readAsArrayBuffer(e.target.files[0]);
+    };
+
+    function setupUI() {
+        const headers = Object.keys(rawData[0]);
+        const sx = document.getElementById('selX'), sy = document.getElementById('selY');
+        sx.innerHTML = ''; sy.innerHTML = '';
+        headers.forEach(h => { sx.add(new Option(h,h)); sy.add(new Option(h,h)); });
+        if(headers.length > 1) sy.selectedIndex = 1;
+        document.getElementById('mainUI').style.display = 'block';
+        document.querySelector('.dashboard').style.display = 'grid';
+        document.querySelector('.ui-controls').style.display = 'block';
+        process();
     }
 
-    // 2. INTERFACE INITIALIZATION
-    function initUI(headers) {
-        const sx = document.getElementById('selX');
-        const sy = document.getElementById('selY');
-        sx.innerHTML = ""; sy.innerHTML = "";
-        
-        headers.forEach(h => {
-            sx.add(new Option(h, h));
-            sy.add(new Option(h, h));
-        });
+    function setMode(m) { chartMode = m; process(); }
 
-        if (headers.length > 1) sy.selectedIndex = 1;
-
-        ui.style.display = 'block';
-        dashboard.style.display = 'grid';
-        
-        // Dynamic re-render on change
-        sx.onchange = () => runPulse();
-        sy.onchange = () => runPulse();
-        document.getElementById('btnLine').onclick = () => { activeMode='line'; runPulse(); };
-        document.getElementById('btnBar').onclick = () => { activeMode='bar'; runPulse(); };
-
-        runPulse();
-    }
-
-    // 3. MATH & PREDICTION ENGINE
-    function runPulse() {
-        const xK = document.getElementById('selX').value;
-        const yK = document.getElementById('selY').value;
-
-        const clean = masterData.map(d => ({
+    function process() {
+        const xK = document.getElementById('selX').value, yK = document.getElementById('selY').value;
+        const clean = rawData.map(d => ({
             label: String(d[xK]),
             val: parseFloat(String(d[yK]).replace(/[^0-9.-]/g, ''))
         })).filter(p => !isNaN(p.val));
 
-        if (clean.length < 2) {
-            log.innerText = "Error: Not enough numerical data in that column.";
-            return;
-        }
-
-        const vals = clean.map(c => c.val);
-        const n = vals.length;
+        const n = clean.length, vals = clean.map(p => p.val);
         const avg = vals.reduce((a,b) => a+b, 0) / n;
-        
-        // Linear Regression (y = mx + b)
-        let sumX=0, sumY=0, sumXY=0, sumXX=0;
-        vals.forEach((y, x) => { sumX+=x; sumY+=y; sumXY+=x*y; sumXX+=x*x; });
-        const m = (n*sumXY - sumX*sumY) / (n*sumXX - sumX*sumX);
-        const b = (sumY - m*sumX) / n;
+        let sX=0, sY=0, sXY=0, sXX=0;
+        vals.forEach((y, x) => { sX+=x; sY+=y; sXY+=x*y; sXX+=x*x; });
+        const m = (n*sXY - sX*sY) / (n*sXX - sX*sX), b = (sY - m*sX) / n;
 
-        // Update Dashboard
-        document.getElementById('avg').innerText = Math.round(avg).toLocaleString();
-        document.getElementById('forecast').innerText = Math.round(m * n + b).toLocaleString();
-        document.getElementById('trend').innerText = m > 0 ? "Growth 📈" : "Decline 📉";
-        document.getElementById('trend').style.color = m > 0 ? "#28a745" : "#dc3545";
+        document.getElementById('statAvg').innerText = Math.round(avg).toLocaleString();
+        document.getElementById('statForecast').innerText = Math.round(m * n + b).toLocaleString();
+        document.getElementById('statTrend').innerText = m > 0 ? "Upward 📈" : "Downward 📉";
+        document.getElementById('statTrend').style.color = m > 0 ? "#5aa4ab" : "#ff6b6b";
 
-        drawChart(clean, {m, b, n});
+        render(clean, {m, b, n});
     }
 
-    // 4. CHARTING ENGINE WITH LABELS & FORECAST LINE
-    function drawChart(data, stats) {
-        const canvas = document.getElementById('pulseCanvas');
-        const ctx = canvas.getContext('2d');
-        const dpr = window.devicePixelRatio || 1;
-        canvas.width = canvas.offsetWidth * dpr;
-        canvas.height = canvas.offsetHeight * dpr;
+    function render(data, stats) {
+        const dpr = 2;
+        canvas.width = canvas.offsetWidth * dpr; canvas.height = canvas.offsetHeight * dpr;
         ctx.scale(dpr, dpr);
-
-        const w = canvas.offsetWidth, h = canvas.offsetHeight, pad = 70;
-        const vals = data.map(d => d.val);
-        const max = Math.max(...vals) * 1.2;
-        const step = (w - pad*2) / (data.length - 1 || 1);
-
-        ctx.clearRect(0, 0, w, h);
+        const w = canvas.offsetWidth, h = canvas.offsetHeight;
+        const padL = 90, padR = 110, padT = 50, padB = 90;
         
-        // Axes
-        ctx.strokeStyle = "#ccc"; ctx.lineWidth = 1;
-        ctx.beginPath(); ctx.moveTo(pad, pad); ctx.lineTo(pad, h-pad); ctx.lineTo(w-pad, h-pad); ctx.stroke();
+        const target = parseFloat(document.getElementById('targetVal').value) || 0;
+        const max = Math.max(...data.map(d => d.val), (stats.m * data.length + stats.b), target) * 1.2;
+        const step = (w - padL - padR) / (data.length - 1 || 1);
+
+        ctx.clearRect(0,0,w,h); ctx.fillStyle = "white"; ctx.fillRect(0,0,w,h);
 
         // Y-Axis Labels
-        ctx.fillStyle = "#888"; ctx.font = "10px sans-serif"; ctx.textAlign = "right";
-        for(let i=0; i<=4; i++) {
-            const yVal = Math.round(max / 4 * i);
-            const yPos = (h-pad) - (yVal/max * (h-pad*2));
-            ctx.fillText(yVal.toLocaleString(), pad - 10, yPos + 3);
+        ctx.strokeStyle = "#eee"; ctx.fillStyle = "#444"; ctx.font = "bold 12px sans-serif"; ctx.textAlign = "right";
+        for(let i=0; i<=5; i++) {
+            const yVal = Math.round(max / 5 * i), yPos = (h - padB) - (yVal / max * (h - padB - padT));
+            ctx.beginPath(); ctx.moveTo(padL, yPos); ctx.lineTo(w - padR, yPos); ctx.stroke();
+            ctx.fillText(yVal.toLocaleString(), padL - 15, yPos + 5);
         }
 
-        // PREDICTIVE DASHED LINE
-        ctx.setLineDash([5, 5]); ctx.strokeStyle = "rgba(65, 121, 126, 0.3)";
+        // Target Line (The Upgrade)
+        if (target > 0) {
+            const ty = (h - padB) - (target / max * (h - padB - padT));
+            ctx.strokeStyle = varProp('--red'); ctx.lineWidth = 3; ctx.setLineDash([]);
+            ctx.beginPath(); ctx.moveTo(padL, ty); ctx.lineTo(w - padR, ty); ctx.stroke();
+            ctx.fillStyle = varProp('--red'); ctx.fillRect(w - padR + 5, ty - 12, 100, 24);
+            ctx.fillStyle = "white"; ctx.font = "bold 10px sans-serif"; ctx.textAlign = "left";
+            ctx.fillText("ANNUAL GOAL", w - padR + 10, ty + 4);
+        }
+
+        // Projection Line
+        ctx.setLineDash([6, 4]); ctx.strokeStyle = "rgba(0, 25, 53, 0.25)"; ctx.lineWidth = 2;
         ctx.beginPath();
         for(let i=0; i <= data.length; i++) {
-            const py = stats.m * i + stats.b;
-            const px = pad + (i * step);
-            const pyPos = (h-pad) - (py/max * (h-pad*2));
-            if(i===0) ctx.moveTo(px, pyPos); else ctx.lineTo(px, pyPos);
+            const py = stats.m * i + stats.b, px = padL + (i * step), pyPos = (h - padB) - (py / max * (h - padB - padT));
+            if(i === 0) ctx.moveTo(px, pyPos); else ctx.lineTo(px, pyPos);
+            if(i === data.length) {
+                ctx.stroke(); ctx.setLineDash([]); ctx.fillStyle = varProp('--teal');
+                ctx.beginPath(); ctx.arc(px, pyPos, 6, 0, Math.PI*2); ctx.fill();
+                ctx.fillStyle = "#222"; ctx.textAlign = "left"; ctx.fillText("FORECAST", px + 10, pyPos + 4);
+            }
         }
-        ctx.stroke(); ctx.setLineDash([]);
 
-        // MAIN DATA
-        ctx.beginPath(); ctx.strokeStyle = "#41797e"; ctx.lineWidth = 3;
+        // Actual Data
+        ctx.setLineDash([]); ctx.beginPath(); ctx.strokeStyle = varProp('--teal'); ctx.lineWidth = 4;
         data.forEach((p, i) => {
-            const x = pad + (i * step);
-            const y = (h-pad) - (p.val / max * (h-pad*2));
+            const x = padL + (i * step), y = (h - padB) - (p.val / max * (h - padB - padT));
+            if(chartMode === 'line') { if(i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y); }
+            else { ctx.fillStyle = varProp('--navy'); ctx.fillRect(x - 12, y, 24, (h - padB) - y); }
             
-            if(activeMode === 'line') {
-                if(i===0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
-            } else {
-                ctx.fillStyle = "#001935";
-                ctx.fillRect(x-12, y, 24, (h-pad)-y);
-            }
-            
-            // X-Labels (Simplified)
-            if(i % Math.ceil(data.length/10) === 0) {
-                ctx.fillStyle = "#666"; ctx.textAlign = "center";
-                ctx.fillText(p.label.substring(0, 10), x, h-pad+20);
-            }
+            // X-Axis Labeled Categories
+            ctx.save(); ctx.translate(x, h - padB + 25); ctx.rotate(Math.PI / 4);
+            ctx.fillStyle = "#333"; ctx.textAlign = "left"; ctx.font = "bold 11px sans-serif";
+            ctx.fillText(p.label, 0, 0); ctx.restore();
         });
-        if(activeMode === 'line') ctx.stroke();
+        if(chartMode === 'line') ctx.stroke();
     }
 
-    function exportImg() {
+    function varProp(name) { return getComputedStyle(document.documentElement).getPropertyValue(name).trim(); }
+
+    function exportData() {
         const link = document.createElement('a');
         link.download = 'CamacPulse_Report.png';
-        link.href = document.getElementById('pulseCanvas').toDataURL();
+        link.href = canvas.toDataURL('image/png');
         link.click();
     }
 </script>
