@@ -2,179 +2,197 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>CamacPulseVisualizer | Fail-Safe</title>
+    <title>CamacPulseVisualizer | Predictive Studio</title>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
     <style>
         :root { --teal: #41797e; --navy: #001935; --bg: #f4f7f9; --text: #333; }
-        body { font-family: sans-serif; background: var(--bg); color: var(--text); padding: 20px; }
-        .container { max-width: 900px; margin: auto; background: white; padding: 25px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
+        body { font-family: -apple-system, sans-serif; background: var(--bg); color: var(--text); padding: 20px 20px 100px 20px; }
+        .container { max-width: 1000px; margin: auto; background: white; padding: 30px; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); border-top: 6px solid var(--teal); }
         
-        .upload-area { border: 3px dashed var(--teal); padding: 40px; text-align: center; cursor: pointer; border-radius: 10px; margin-bottom: 20px; transition: 0.3s; }
-        .upload-area:hover { background: rgba(65, 121, 126, 0.05); }
+        .upload-area { border: 2px dashed #ccc; padding: 40px; text-align: center; cursor: pointer; border-radius: 10px; margin-bottom: 20px; background: #fafafa; }
+        .upload-area:hover { border-color: var(--teal); background: #f0f7f7; }
         
-        #results { display: none; }
-        .controls { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px; background: #eee; padding: 15px; border-radius: 8px; }
-        canvas { width: 100%; height: 400px; background: white; border: 1px solid #ddd; border-radius: 5px; }
-        
-        .status-badge { display: inline-block; padding: 5px 12px; border-radius: 20px; font-size: 12px; font-weight: bold; margin-bottom: 10px; }
-        .status-ready { background: #d4edda; color: #155724; }
-        .status-working { background: #fff3cd; color: #856404; }
+        #interface { display: none; }
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 25px; }
+        .stat-card { background: var(--bg); padding: 15px; border-radius: 8px; text-align: center; border-left: 4px solid var(--teal); }
+        .stat-card small { font-size: 10px; font-weight: bold; color: #777; text-transform: uppercase; }
+        .stat-card div { font-size: 20px; font-weight: bold; color: var(--navy); }
 
-        .fixed-footer { position: fixed; bottom: 0; left: 0; width: 100%; background: var(--navy); padding: 15px; text-align: center; }
-        .fixed-footer a { color: white; text-decoration: none; font-weight: bold; }
+        .selectors { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px; padding: 15px; background: #fdfdfd; border: 1px solid #eee; border-radius: 8px; }
+        select { width: 100%; padding: 10px; border-radius: 5px; border: 1px solid #ddd; }
+
+        canvas { width: 100%; height: 450px; background: #fff; border-radius: 8px; cursor: crosshair; }
+        
+        .fixed-footer { position: fixed; bottom: 0; left: 0; width: 100%; background: var(--navy); padding: 15px; text-align: center; border-top: 3px solid var(--teal); z-index: 100; }
+        .fixed-footer a { color: white; text-decoration: none; font-weight: bold; letter-spacing: 1px; }
+        
+        .btn-group { display: flex; gap: 10px; justify-content: center; margin-bottom: 15px; }
+        button { padding: 10px 20px; border-radius: 5px; border: none; cursor: pointer; font-weight: bold; transition: 0.2s; }
+        .btn-p { background: var(--teal); color: white; }
+        .btn-s { background: var(--navy); color: white; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <div id="status" class="status-badge status-ready">SYSTEM: STANDBY</div>
-    <h1>CamacPulseVisualizer</h1>
+    <h1 style="margin-top:0; color: var(--navy);">CamacPulseVisualizer</h1>
     
     <div class="upload-area" id="dropZone">
-        <strong>STEP 1: Drop Excel or CSV here</strong>
-        <p>Or click to browse files</p>
-        <input type="file" id="filePicker" style="display:none" accept=".xlsx, .xls, .csv">
+        <strong>Drop Dataset Here</strong>
+        <p style="font-size: 13px;">Excel or CSV files accepted</p>
+        <input type="file" id="fileIn" style="display:none" accept=".xlsx, .xls, .csv">
     </div>
 
-    <div id="results">
-        <div class="controls">
-            <div>
-                <label>Labels (X-Axis)</label>
-                <select id="selX" style="width:100%"></select>
-            </div>
-            <div>
-                <label>Values (Y-Axis)</label>
-                <select id="selY" style="width:100%"></select>
-            </div>
+    <div id="interface">
+        <div class="stats-grid">
+            <div class="stat-card"><small>Average Value</small><div id="avgVal">0</div></div>
+            <div class="stat-card"><small>Trajectory</small><div id="trendTxt">Neutral</div></div>
+            <div class="stat-card"><small>Next Period Forecast</small><div id="forecastVal">0</div></div>
         </div>
-        <div style="margin-bottom: 15px; text-align: center;">
-            <button onclick="draw('line')" style="padding:10px 20px; cursor:pointer">📈 LINE PULSE</button>
-            <button onclick="draw('bar')" style="padding:10px 20px; cursor:pointer">📊 BAR GROWTH</button>
-            <button onclick="saveImage()" style="padding:10px 20px; cursor:pointer; background:var(--teal); color:white; border:none; border-radius:4px;">💾 SAVE IMAGE</button>
+
+        <div class="selectors">
+            <div><label>Label Column (X)</label><select id="selX" onchange="process()"></select></div>
+            <div><label>Metric Column (Y)</label><select id="selY" onchange="process()"></select></div>
         </div>
-        <canvas id="mainCanvas"></canvas>
+
+        <div class="btn-group">
+            <button class="btn-p" onclick="draw('line')">Pulse Line</button>
+            <button class="btn-p" onclick="draw('bar')">Growth Bar</button>
+            <button class="btn-s" onclick="savePNG()">Export Intelligence (.png)</button>
+        </div>
+
+        <canvas id="pulseCanvas"></canvas>
     </div>
 </div>
 
 <div class="fixed-footer">
-    <a href="https://camacconsulting.github.io/CamacPulseVisualizer/" target="_blank">VIEW FULL WINDOW ↗</a>
+    <a href="https://camacconsulting.github.io/CamacPulseVisualizer/" target="_blank">FULL WINDOW VIEW ↗</a>
 </div>
 
 <script>
     const dropZone = document.getElementById('dropZone');
-    const filePicker = document.getElementById('filePicker');
-    const status = document.getElementById('status');
-    let globalData = [];
+    const fileIn = document.getElementById('fileIn');
+    let rawData = [];
+    let currentMode = 'line';
 
-    // Handle Click and Drag/Drop
-    dropZone.onclick = () => filePicker.click();
-    filePicker.onchange = (e) => handleFile(e.target.files[0]);
-    
-    dropZone.ondragover = (e) => { e.preventDefault(); dropZone.style.background = "#eefaff"; };
-    dropZone.ondragleave = () => { dropZone.style.background = "transparent"; };
-    dropZone.ondrop = (e) => {
-        e.preventDefault();
-        handleFile(e.dataTransfer.files[0]);
-    };
+    dropZone.onclick = () => fileIn.click();
+    fileIn.onchange = (e) => loadFile(e.target.files[0]);
 
-    function handleFile(file) {
-        if (!file) return;
-        status.className = "status-badge status-working";
-        status.innerText = "READING: " + file.name;
-
+    function loadFile(file) {
+        if(!file) return;
         const reader = new FileReader();
-        reader.onload = function(e) {
-            try {
-                const data = new Uint8Array(e.target.result);
-                const workbook = XLSX.read(data, {type: 'array'});
-                const sheet = workbook.Sheets[workbook.SheetNames[0]];
-                globalData = XLSX.utils.sheet_to_json(sheet);
-
-                if (globalData.length > 0) {
-                    initInterface(Object.keys(globalData[0]));
-                } else {
-                    alert("No data found in this file.");
-                }
-            } catch (err) {
-                console.error(err);
-                alert("Error: File could not be parsed.");
-            }
+        reader.onload = (e) => {
+            const wb = XLSX.read(new Uint8Array(e.target.result), {type: 'array'});
+            rawData = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]);
+            if(rawData.length > 0) initSelectors(Object.keys(rawData[0]));
         };
         reader.readAsArrayBuffer(file);
     }
 
-    function initInterface(headers) {
-        const selX = document.getElementById('selX');
-        const selY = document.getElementById('selY');
-        selX.innerHTML = ""; selY.innerHTML = "";
-        
-        headers.forEach(h => {
-            selX.add(new Option(h, h));
-            selY.add(new Option(h, h));
-        });
-        
-        if (headers.length > 1) selY.selectedIndex = 1;
-
-        document.getElementById('results').style.display = 'block';
-        status.className = "status-badge status-ready";
-        status.innerText = "DATA MAPPED";
-        
-        selX.onchange = () => draw('line');
-        selY.onchange = () => draw('line');
-        
-        draw('line');
+    function initSelectors(keys) {
+        const sx = document.getElementById('selX'), sy = document.getElementById('selY');
+        sx.innerHTML = ''; sy.innerHTML = '';
+        keys.forEach(k => { sx.add(new Option(k,k)); sy.add(new Option(k,k)); });
+        if(keys.length > 1) sy.selectedIndex = 1;
+        document.getElementById('interface').style.display = 'block';
+        process();
     }
 
-    function draw(type) {
-        const canvas = document.getElementById('mainCanvas');
+    function process() {
+        const xK = document.getElementById('selX').value, yK = document.getElementById('selY').value;
+        const cleanData = rawData.map(d => ({
+            x: String(d[xK]),
+            y: parseFloat(String(d[yK]).replace(/[^0-9.-]/g, ''))
+        })).filter(p => !isNaN(p.y));
+        
+        analyze(cleanData);
+        draw(currentMode, cleanData);
+    }
+
+    function analyze(data) {
+        const vals = data.map(d => d.y);
+        const n = vals.length;
+        const avg = vals.reduce((a,b) => a+b, 0) / n;
+        document.getElementById('avgVal').innerText = Math.round(avg).toLocaleString();
+
+        // Linear Regression (y = mx + b)
+        let sX=0, sY=0, sXY=0, sXX=0;
+        vals.forEach((y, x) => { sX+=x; sY+=y; sXY+=x*y; sXX+=x*x; });
+        const m = (n*sXY - sX*sY) / (n*sXX - sX*sX);
+        const b = (sY - m*sX) / n;
+
+        const nextVal = m * n + b;
+        document.getElementById('forecastVal').innerText = Math.round(nextVal).toLocaleString();
+        document.getElementById('trendTxt').innerText = m > 0 ? "Growth 📈" : "Decline 📉";
+        document.getElementById('trendTxt').style.color = m > 0 ? "#28a745" : "#dc3545";
+        
+        window.regression = { m, b, n };
+    }
+
+    function draw(mode, data) {
+        currentMode = mode;
+        if(!data) return;
+        const canvas = document.getElementById('pulseCanvas');
         const ctx = canvas.getContext('2d');
-        const xKey = document.getElementById('selX').value;
-        const yKey = document.getElementById('selY').value;
+        const dpr = window.devicePixelRatio || 1;
+        canvas.width = canvas.offsetWidth * dpr;
+        canvas.height = canvas.offsetHeight * dpr;
+        ctx.scale(dpr, dpr);
 
-        // Prep Data
-        const points = globalData.map(d => ({
-            label: String(d[xKey]),
-            val: parseFloat(String(d[yKey]).replace(/[^0-9.-]/g, ''))
-        })).filter(p => !isNaN(p.val));
+        const w = canvas.offsetWidth, h = canvas.offsetHeight, pad = 60;
+        const vals = data.map(d => d.y);
+        const max = Math.max(...vals) * 1.2;
+        const step = (w - pad*2) / (data.length - 1 || 1);
 
-        // Canvas Sizing
-        canvas.width = canvas.offsetWidth * 2;
-        canvas.height = canvas.offsetHeight * 2;
-        ctx.scale(2, 2);
-        const w = canvas.offsetWidth;
-        const h = canvas.offsetHeight;
-        const pad = 50;
+        ctx.clearRect(0,0,w,h);
+        
+        // Draw Axes
+        ctx.strokeStyle = "#ccc"; ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.moveTo(pad, pad); ctx.lineTo(pad, h-pad); ctx.lineTo(w-pad, h-pad); ctx.stroke();
 
-        // Scaling
-        const max = Math.max(...points.map(p => p.val)) * 1.1;
-        const step = (w - (pad * 2)) / (points.length - 1 || 1);
+        // Y-Axis Labels
+        ctx.fillStyle = "#999"; ctx.font = "10px sans-serif"; ctx.textAlign = "right";
+        for(let i=0; i<=5; i++) {
+            const yVal = Math.round(max / 5 * i);
+            const yPos = (h-pad) - (yVal/max * (h-pad*2));
+            ctx.fillText(yVal.toLocaleString(), pad - 10, yPos + 3);
+        }
 
-        ctx.clearRect(0, 0, w, h);
-        ctx.fillStyle = "#fff"; ctx.fillRect(0,0,w,h);
-
-        // Draw Logic
+        // Draw Predictive Line
+        const { m, b, n } = window.regression;
+        ctx.setLineDash([5, 5]); ctx.strokeStyle = "rgba(0,0,0,0.2)";
         ctx.beginPath();
-        ctx.strokeStyle = "#41797e";
-        ctx.lineWidth = 3;
+        [0, n].forEach(i => {
+            const py = m * i + b;
+            const px = pad + (i * step);
+            const pyPos = (h-pad) - (py/max * (h-pad*2));
+            if(i===0) ctx.moveTo(px, pyPos); else ctx.lineTo(px, pyPos);
+        });
+        ctx.stroke(); ctx.setLineDash([]);
 
-        points.forEach((p, i) => {
-            const x = pad + (i * step);
-            const y = (h - pad) - (p.val / max * (h - pad * 2));
-            
-            if (type === 'line') {
-                if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+        // Draw Data
+        ctx.beginPath(); ctx.strokeStyle = "#41797e"; ctx.lineWidth = 3;
+        data.forEach((p, i) => {
+            const x = pad + (i * step), y = (h-pad) - (p.y/max * (h-pad*2));
+            if(mode === 'line') {
+                if(i===0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
             } else {
                 ctx.fillStyle = "#001935";
-                ctx.fillRect(x - 10, y, 20, (h-pad) - y);
+                ctx.fillRect(x-10, y, 20, (h-pad)-y);
+            }
+            // X Labels
+            if(data.length < 15) {
+                ctx.save(); ctx.translate(x, h-pad+15); ctx.rotate(Math.PI/4);
+                ctx.fillStyle = "#666"; ctx.textAlign="left"; ctx.fillText(p.x, 0, 0); ctx.restore();
             }
         });
-        if (type === 'line') ctx.stroke();
+        if(mode === 'line') ctx.stroke();
     }
 
-    function saveImage() {
+    function savePNG() {
         const link = document.createElement('a');
-        link.download = 'CamacPulse_Chart.png';
-        link.href = document.getElementById('mainCanvas').toDataURL();
+        link.download = 'CamacPulse_Analysis.png';
+        link.href = document.getElementById('pulseCanvas').toDataURL();
         link.click();
     }
 </script>
