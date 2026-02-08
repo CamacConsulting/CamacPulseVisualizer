@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>CamacPulseVisualizer | Elite Analytics</title>
+    <title>CamacPulseVisualizer | Multi-Chart Suite</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
         :root { --teal: #41797e; --navy: #001935; --bg: #f4f7f9; --card: #ffffff; --text: #333333; }
@@ -23,19 +23,22 @@
         .config-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
         select { width: 100%; padding: 10px; border-radius: 5px; border: 1px solid #ccc; background: var(--card); color: var(--text); }
 
-        .upload-zone { border: 2px dashed #ccc; padding: 30px; border-radius: 10px; cursor: pointer; text-align: center; margin-bottom: 20px; }
+        .upload-zone { border: 2px dashed #ccc; padding: 30px; border-radius: 10px; cursor: pointer; text-align: center; margin-bottom: 20px; transition: 0.2s; }
+        .upload-zone:hover { border-color: var(--teal); background: rgba(65, 121, 126, 0.05); }
         
-        .toolbar { display: none; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 10px; }
-        .btn-group { display: flex; gap: 8px; }
-        .btn { padding: 8px 16px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; font-size: 11px; text-transform: uppercase; transition: 0.2s; }
+        .toolbar { display: none; flex-direction: column; align-items: center; margin-bottom: 20px; gap: 15px; }
+        .chart-options { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
+        
+        .btn { padding: 10px 18px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; font-size: 11px; text-transform: uppercase; transition: 0.2s; }
         .btn-teal { background: var(--teal); color: white; }
         .btn-navy { background: var(--navy); color: white; border: 1px solid var(--teal); }
         .btn-outline { background: transparent; border: 1px solid var(--teal); color: var(--teal); }
+        .btn:hover { transform: translateY(-1px); box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
 
         canvas { width: 100%; height: 450px; background: #fff; border-radius: 8px; margin-bottom: 10px; }
 
         .export-hub { display: none; margin-top: 20px; padding-top: 20px; border-top: 1px solid rgba(127,127,127,0.2); text-align: center; }
-        .export-hub h3 { font-size: 12px; margin-bottom: 15px; opacity: 0.6; text-transform: uppercase; }
+        .export-hub h3 { font-size: 11px; margin-bottom: 15px; opacity: 0.6; text-transform: uppercase; letter-spacing: 1px; }
 
         .fixed-footer { position: fixed; bottom: 0; left: 0; width: 100%; background: var(--navy); padding: 15px 0; text-align: center; z-index: 1000; border-top: 3px solid var(--teal); }
         .fixed-footer a { color: white; text-decoration: none; font-size: 12px; font-weight: bold; text-transform: uppercase; letter-spacing: 1.5px; }
@@ -46,43 +49,45 @@
 <div class="app-container">
     <div class="header">
         <h1>CamacPulseVisualizer</h1>
-        <button class="btn btn-outline" onclick="toggleDark()">🌓 Theme</button>
+        <button class="btn btn-outline" onclick="toggleDark()">🌓 Toggle Theme</button>
     </div>
 
     <div id="dropZone" class="upload-zone" onclick="document.getElementById('fileIn').click()">
-        <strong>Upload Spreadsheet (Excel/CSV)</strong>
-        <p style="font-size: 12px; opacity: 0.7;">Upload data to generate strategic visuals.</p>
+        <strong>Click to Upload Intelligence (Excel/CSV)</strong>
+        <p style="font-size: 12px; opacity: 0.7;">Upload data to unlock multi-chart visualization.</p>
     </div>
     <input type="file" id="fileIn" style="display:none" accept=".xlsx, .xls, .csv">
 
     <div id="summaryBar" class="summary-bar">
         <div class="summary-card"><small>Total Sum</small><span id="statSum">$0</span></div>
-        <div class="summary-card"><small>Average Value</small><span id="statAvg">$0</span></div>
-        <div class="summary-card"><small>Peak Point</small><span id="statMax">$0</span></div>
+        <div class="summary-card"><small>Average</small><span id="statAvg">$0</span></div>
+        <div class="summary-card"><small>Peak</small><span id="statMax">$0</span></div>
     </div>
 
     <div id="configPanel" class="config-panel">
         <div class="config-grid">
             <div><label>Labels (X-Axis)</label><select id="labelCol" onchange="mapAndRender()"></select></div>
-            <div><label>Analysis Column (Y-Axis)</label><select id="valueCol" onchange="mapAndRender()"></select></div>
+            <div><label>Analysis (Y-Axis)</label><select id="valueCol" onchange="mapAndRender()"></select></div>
         </div>
     </div>
 
     <div class="toolbar" id="toolBar">
-        <div class="btn-group">
-            <button class="btn btn-teal" onclick="setMode('line')">Line Pulse</button>
-            <button class="btn btn-navy" onclick="setMode('bar')">Bar Growth</button>
+        <div class="chart-options">
+            <button class="btn btn-teal" onclick="setMode('line')">📈 Line Pulse</button>
+            <button class="btn btn-teal" onclick="setMode('bar')">📊 Bar Growth</button>
+            <button class="btn btn-teal" onclick="setMode('area')">🌊 Area Flow</button>
+            <button class="btn btn-teal" onclick="setMode('scatter')">📍 Scatter</button>
         </div>
     </div>
 
     <canvas id="pulseCanvas"></canvas>
 
     <div id="exportHub" class="export-hub">
-        <h3>Export Intelligence</h3>
-        <div class="btn-group" style="justify-content: center; flex-wrap: wrap;">
-            <button class="btn btn-outline" onclick="downloadImage()">🖼 Save Visual (PNG)</button>
-            <button class="btn btn-outline" onclick="exportData('xlsx')">📊 Save Excel (.xlsx)</button>
-            <button class="btn btn-outline" onclick="exportData('csv')">📑 Save CSV (.csv)</button>
+        <h3>Export Hub</h3>
+        <div class="chart-options">
+            <button class="btn btn-outline" onclick="downloadImage()">🖼 Save PNG</button>
+            <button class="btn btn-outline" onclick="exportData('xlsx')">📊 Save Excel</button>
+            <button class="btn btn-outline" onclick="exportData('csv')">📑 Save CSV</button>
         </div>
     </div>
 </div>
@@ -133,4 +138,99 @@
         const lKey = document.getElementById('labelCol').value;
         const vKey = document.getElementById('valueCol').value;
         currentData = rawJson.map(row => ({
-            "Label": String(row[lKey
+            "Label": String(row[lKey] || ""),
+            "Value": parseFloat(String(row[vKey]).replace(/[^0-9.-]/g, ''))
+        })).filter(d => !isNaN(d.Value));
+
+        const vals = currentData.map(d => d.Value);
+        const sum = vals.reduce((a, b) => a + b, 0);
+        document.getElementById('statSum').innerText = sum.toLocaleString(undefined, {style:'currency', currency:'USD', maximumFractionDigits:0});
+        document.getElementById('statAvg').innerText = (sum / vals.length).toLocaleString(undefined, {style:'currency', currency:'USD', maximumFractionDigits:0});
+        document.getElementById('statMax').innerText = Math.max(...vals).toLocaleString(undefined, {style:'currency', currency:'USD', maximumFractionDigits:0});
+        render();
+    }
+
+    function setMode(m) { chartMode = m; render(); }
+
+    function render() {
+        const dpr = 2;
+        canvas.width = canvas.offsetWidth * dpr;
+        canvas.height = canvas.offsetHeight * dpr;
+        ctx.scale(dpr, dpr);
+        const w = canvas.offsetWidth, h = canvas.offsetHeight, pad = 60;
+        const vals = currentData.map(d => d.Value);
+        const max = Math.max(...vals) * 1.2 || 100, min = Math.min(...vals) < 0 ? Math.min(...vals) * 1.1 : 0;
+        const range = max - min, step = (w - (pad * 2)) / (currentData.length - 1 || 1);
+
+        ctx.fillStyle = getComputedStyle(document.body).getPropertyValue('--card');
+        ctx.fillRect(0,0,w,h);
+        ctx.strokeStyle = "rgba(127,127,127,0.2)";
+        for(let i=0; i<=4; i++) {
+            let y = pad + ((h - pad*2) / 4) * i;
+            ctx.beginPath(); ctx.moveTo(pad, y); ctx.lineTo(w-pad, y); ctx.stroke();
+        }
+
+        const teal = getComputedStyle(document.body).getPropertyValue('--teal').trim();
+        const navy = getComputedStyle(document.body).getPropertyValue('--navy').trim();
+
+        // Area Drawing
+        if (chartMode === 'area') {
+            ctx.beginPath();
+            ctx.fillStyle = teal + "33"; // Semi-transparent
+            ctx.moveTo(pad, h - pad);
+            currentData.forEach((d, i) => {
+                const x = pad + (i * step), y = (h - pad) - ((d.Value - min) / range * (h - pad * 2));
+                ctx.lineTo(x, y);
+            });
+            ctx.lineTo(pad + ((currentData.length-1) * step), h - pad);
+            ctx.fill();
+        }
+
+        // Line Drawing
+        if (chartMode === 'line' || chartMode === 'area') {
+            ctx.beginPath(); ctx.strokeStyle = teal; ctx.lineWidth = 4;
+            currentData.forEach((d, i) => {
+                const x = pad + (i * step), y = (h - pad) - ((d.Value - min) / range * (h - pad * 2));
+                if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+            });
+            ctx.stroke();
+        }
+
+        // Points/Bars Drawing
+        currentData.forEach((d, i) => {
+            const x = pad + (i * step), y = (h - pad) - ((d.Value - min) / range * (h - pad * 2));
+            
+            if (chartMode === 'bar') {
+                ctx.fillStyle = navy;
+                const bw = Math.max(step * 0.7, 5);
+                ctx.fillRect(x - bw/2, y, bw, (h-pad) - y);
+            } else if (chartMode === 'scatter' || chartMode === 'line' || chartMode === 'area') {
+                ctx.fillStyle = teal;
+                ctx.beginPath(); ctx.arc(x, y, chartMode === 'scatter' ? 7 : 5, 0, Math.PI*2); ctx.fill();
+            }
+
+            if (currentData.length < 15) {
+                ctx.fillStyle = getComputedStyle(document.body).getPropertyValue('--text');
+                ctx.font = "bold 10px sans-serif"; ctx.textAlign = "center";
+                ctx.fillText(Math.round(d.Value).toLocaleString(), x, y - 12);
+                ctx.fillText(d.Label, x, h - pad + 25);
+            }
+        });
+    }
+
+    function downloadImage() {
+        const link = document.createElement('a');
+        link.download = 'CamacPulse_Export.png';
+        link.href = canvas.toDataURL('image/png');
+        link.click();
+    }
+
+    function exportData(type) {
+        const ws = XLSX.utils.json_to_sheet(currentData);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "PulseData");
+        XLSX.writeFile(wb, `CamacPulse_Data.${type}`);
+    }
+</script>
+</body>
+</html>
