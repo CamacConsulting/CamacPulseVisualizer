@@ -2,60 +2,63 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>CamacPulseVisualizer | Fixed & Final</title>
+    <title>CamacPulseVisualizer | Maximum Visibility</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
         :root { --teal: #41797e; --navy: #001935; --bg: #f8fafc; --accent: #5aa4ab; }
-        body { font-family: system-ui, -apple-system, sans-serif; background: var(--bg); color: var(--navy); margin: 0; padding: 0 0 100px 0; }
+        body { font-family: system-ui, -apple-system, sans-serif; background: var(--bg); color: var(--navy); margin: 0; padding: 0 0 120px 0; }
         
-        header { background: var(--navy); color: white; padding: 25px; text-align: center; border-bottom: 4px solid var(--teal); }
-        .wrapper { max-width: 1100px; margin: 30px auto; padding: 0 20px; }
+        header { background: var(--navy); color: white; padding: 25px; text-align: center; border-bottom: 4px solid var(--teal); box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        .wrapper { max-width: 1250px; margin: 30px auto; padding: 0 25px; }
         
-        /* Dashboard Stats */
-        #statsDash { display: none; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-bottom: 25px; }
-        .card { background: var(--navy); color: white; padding: 20px; border-radius: 12px; text-align: center; }
-        .card small { text-transform: uppercase; font-size: 10px; opacity: 0.7; display: block; }
-        .card div { font-size: 26px; font-weight: 800; color: var(--accent); margin-top: 5px; }
+        /* Stats Display */
+        #statsDash { display: none; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 25px; }
+        .card { background: var(--navy); color: white; padding: 20px; border-radius: 12px; text-align: center; border: 1px solid var(--teal); }
+        .card small { text-transform: uppercase; font-size: 10px; opacity: 0.7; display: block; letter-spacing: 1px; }
+        .card div { font-size: 28px; font-weight: 800; color: var(--accent); margin-top: 5px; }
 
         /* Main Panel */
-        .panel { background: white; padding: 30px; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.05); }
-        .upload-section { border: 3px dashed #cbd5e1; padding: 60px; text-align: center; cursor: pointer; border-radius: 12px; background: #fafafa; }
+        .panel { background: white; padding: 40px; border-radius: 16px; box-shadow: 0 4px 25px rgba(0,0,0,0.06); }
+        .upload-section { border: 3px dashed #cbd5e1; padding: 60px; text-align: center; cursor: pointer; border-radius: 15px; background: #fafafa; }
+        .upload-section:hover { border-color: var(--teal); background: #f0fdfa; }
         
-        .controls { display: none; margin-top: 20px; background: #f1f5f9; padding: 20px; border-radius: 12px; }
-        .grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; }
-        label { font-size: 11px; font-weight: bold; color: #64748b; }
-        select, input { width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #ccc; margin-top: 5px; }
+        .controls { display: none; margin-top: 20px; background: #f1f5f9; padding: 25px; border-radius: 12px; border: 1px solid #e2e8f0; }
+        .grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 25px; }
+        label { font-size: 11px; font-weight: bold; color: #64748b; text-transform: uppercase; }
+        select, input { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #cbd5e1; margin-top: 8px; font-weight: 600; }
 
-        canvas { width: 100%; height: 500px; margin-top: 20px; display: block; }
+        /* Larger Canvas for Full Window */
+        canvas { width: 100%; height: 600px; margin-top: 30px; display: block; }
 
-        /* Bottom Nav */
-        .bottom-nav { position: fixed; bottom: 0; left: 0; width: 100%; background: var(--navy); padding: 15px 0; border-top: 4px solid var(--teal); text-align: center; z-index: 100; }
-        .btn-full { background: var(--teal); color: white; padding: 12px 30px; border-radius: 25px; border: none; font-weight: 800; font-size: 12px; cursor: pointer; text-transform: uppercase; }
+        /* Bottom Navigation Bar */
+        .bottom-nav { position: fixed; bottom: 0; left: 0; width: 100%; background: var(--navy); padding: 18px 0; border-top: 4px solid var(--teal); text-align: center; z-index: 1000; }
+        .btn-full { background: var(--teal); color: white; padding: 14px 40px; border-radius: 30px; border: none; font-weight: 800; font-size: 13px; cursor: pointer; text-transform: uppercase; letter-spacing: 1px; transition: 0.2s; }
+        .btn-full:hover { background: #356367; transform: scale(1.05); }
     </style>
 </head>
 <body>
 
-<header><strong>CAMACPULSE ANALYTICS</strong></header>
+<header><strong>CAMACPULSE ANALYTICS SYSTEM</strong></header>
 
 <div class="wrapper">
     <div id="statsDash">
-        <div class="card"><small>Average</small><div id="outAvg">0</div></div>
-        <div class="card"><small>Trend</small><div id="outTrend">---</div></div>
-        <div class="card"><small>Forecast</small><div id="outFore">0</div></div>
+        <div class="card"><small>Pulse Average</small><div id="outAvg">0</div></div>
+        <div class="card"><small>Trajectory</small><div id="outTrend">---</div></div>
+        <div class="card"><small>Projected Next</small><div id="outFore">0</div></div>
     </div>
 
     <div class="panel">
         <div class="upload-section" id="dropZone">
-            <h2 style="margin:0;">Step 1: Click to Upload</h2>
-            <p>Select your Excel or CSV file</p>
-            <input type="file" id="fileIn" accept=".xlsx, .xls, .csv" style="margin-top: 20px;">
+            <h2 style="margin:0 0 10px 0;">Intelligence Import</h2>
+            <p>Click to upload your dataset for full visual projection</p>
+            <input type="file" id="fileIn" accept=".xlsx, .xls, .csv" style="margin-top: 15px;">
         </div>
 
         <div class="controls" id="ctrls">
             <div class="grid">
-                <div><label>X-Labels</label><select id="selX" onchange="run()"></select></div>
-                <div><label>Y-Values</label><select id="selY" onchange="run()"></select></div>
-                <div><label>Target Goal</label><input type="number" id="goal" oninput="run()" placeholder="0"></div>
+                <div><label>X-Axis (Horizontal)</label><select id="selX" onchange="run()"></select></div>
+                <div><label>Y-Axis (Vertical)</label><select id="selY" onchange="run()"></select></div>
+                <div><label>Target Goal Line</label><input type="number" id="goal" oninput="run()" placeholder="Enter value..."></div>
             </div>
             <canvas id="pulseCanvas"></canvas>
         </div>
@@ -63,114 +66,4 @@
 </div>
 
 <div class="bottom-nav">
-    <button class="btn-full" onclick="window.open(window.location.href, '_blank')">View Full Window ↗</button>
-</div>
-
-<script>
-    const fileIn = document.getElementById('fileIn');
-    const dropZone = document.getElementById('dropZone');
-    let raw = [];
-
-    // Make the whole box clickable
-    dropZone.addEventListener('click', (e) => {
-        if(e.target !== fileIn) fileIn.click();
-    });
-
-    fileIn.addEventListener('change', (e) => {
-        const file = e.target.files[0];
-        if (!file) return;
-
-        const reader = new FileReader();
-        reader.onload = (f) => {
-            try {
-                const wb = XLSX.read(new Uint8Array(f.target.result), {type: 'array'});
-                raw = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]);
-                if(raw.length > 0) init();
-            } catch(err) { alert("Error reading file"); }
-        };
-        reader.readAsArrayBuffer(file);
-    });
-
-    function init() {
-        const keys = Object.keys(raw[0]);
-        const sx = document.getElementById('selX'), sy = document.getElementById('selY');
-        sx.innerHTML = ''; sy.innerHTML = '';
-        keys.forEach(k => { sx.add(new Option(k,k)); sy.add(new Option(k,k)); });
-        if(keys.length > 1) sy.selectedIndex = 1;
-
-        document.getElementById('dropZone').style.display = 'none';
-        document.getElementById('statsDash').style.display = 'grid';
-        document.getElementById('ctrls').style.display = 'block';
-        run();
-    }
-
-    function run() {
-        const canvas = document.getElementById('pulseCanvas'), ctx = canvas.getContext('2d');
-        const xK = document.getElementById('selX').value, yK = document.getElementById('selY').value;
-        const goal = parseFloat(document.getElementById('goal').value) || 0;
-
-        const pts = raw.map(d => ({
-            x: String(d[xK]),
-            y: parseFloat(String(d[yK]).replace(/[^0-9.-]/g, ''))
-        })).filter(p => !isNaN(p.y));
-
-        const n = pts.length, ys = pts.map(p => p.y);
-        let sX=0, sY=0, sXY=0, sXX=0;
-        ys.forEach((y,x) => { sX+=x; sY+=y; sXY+=x*y; sXX+=x*x; });
-        const m = (n*sXY - sX*sY)/(n*sXX - sX*sX) || 0, b = (sY - m*sX)/n;
-
-        document.getElementById('outAvg').innerText = Math.round(ys.reduce((a,b)=>a+b,0)/n).toLocaleString();
-        document.getElementById('outFore').innerText = Math.round(m*n+b).toLocaleString();
-        document.getElementById('outTrend').innerText = m > 0 ? "Upward" : "Downward";
-
-        const dpr = 2;
-        canvas.width = canvas.offsetWidth * dpr; canvas.height = canvas.offsetHeight * dpr;
-        ctx.scale(dpr, dpr);
-        const w = canvas.offsetWidth, h = canvas.offsetHeight;
-        const pL = 80, pR = 180, pT = 60, pB = 100;
-
-        const max = Math.max(...ys, (m*n+b), goal) * 1.3;
-        const step = (w - pL - pR) / (n - 1 || 1);
-
-        ctx.fillStyle = "white"; ctx.fillRect(0,0,w,h);
-
-        // Grid & Numbers
-        ctx.fillStyle = "#64748b"; ctx.font = "bold 11px sans-serif"; ctx.textAlign = "right";
-        for(let i=0; i<=5; i++) {
-            const val = Math.round(max/5*i), y = (h-pB)-(val/max*(h-pB-pT));
-            ctx.fillText(val.toLocaleString(), pL-15, y+4);
-        }
-
-        // Target Line
-        if(goal > 0) {
-            const gy = (h-pB)-(goal/max*(h-pB-pT));
-            ctx.strokeStyle = "#e11d48"; ctx.lineWidth = 2; ctx.beginPath();
-            ctx.moveTo(pL, gy); ctx.lineTo(w-pR, gy); ctx.stroke();
-            ctx.fillStyle = "#e11d48"; ctx.textAlign="left"; ctx.fillText("TARGET GOAL", w-pR+10, gy+4);
-        }
-
-        // Forecast
-        ctx.setLineDash([5,5]); ctx.strokeStyle = "#ccc"; ctx.beginPath();
-        for(let i=0; i<=n; i++) {
-            const py = (h-pB)-((m*i+b)/max*(h-pB-pT)), px = pL+(i*step);
-            if(i===0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
-            if(i===n) {
-                ctx.stroke(); ctx.setLineDash([]); ctx.fillStyle = "teal";
-                ctx.beginPath(); ctx.arc(px, py, 6, 0, 7); ctx.fill();
-                ctx.fillStyle = "black"; ctx.fillText("FORECAST POINT", px+12, py+4);
-            }
-        }
-
-        // Data Pulse
-        ctx.setLineDash([]); ctx.strokeStyle = "#41797e"; ctx.lineWidth = 4; ctx.beginPath();
-        pts.forEach((p, i) => {
-            const x = pL+(i*step), y = (h-pB)-(p.y/max*(h-pB-pT));
-            if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
-            ctx.save(); ctx.translate(x, h-pB+25); ctx.rotate(Math.PI/4);
-            ctx.fillStyle = "#64748b"; ctx.textAlign="left"; ctx.fillText(p.x, 0, 0); ctx.restore();
-        });
-        ctx.stroke();
-    }
-</script>
-</body>
-</html>
+    <button class="btn-full" onclick="
