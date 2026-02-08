@@ -6,176 +6,84 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
         :root { 
-            --teal: #41797e; 
-            --navy: #001935; 
-            --bg: #f0f2f5; 
-            --accent: #5aa4ab;
-            --glass: rgba(255, 255, 255, 0.9);
+            --teal: #41797e; --navy: #001935; --bg: #f0f2f5; --accent: #5aa4ab;
+            --glass: rgba(255, 255, 255, 0.95);
         }
         
         body { 
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; 
+            font-family: 'Inter', system-ui, sans-serif; 
             background-color: var(--bg); 
             background-image: radial-gradient(#d1d5db 1px, transparent 1px);
-            background-size: 40px 40px; /* Subtle grid background */
-            color: var(--navy); 
-            margin: 0; 
-            padding-bottom: 120px; 
-            letter-spacing: -0.01em;
+            background-size: 40px 40px;
+            color: var(--navy); margin: 0; padding-bottom: 100px;
         }
+
+        /* Fullscreen Wrapper Logic */
+        #appFrame:fullscreen { background: white; padding: 40px; overflow-y: auto; }
+        #appFrame:-webkit-full-screen { background: white; padding: 40px; }
 
         header { 
-            background: var(--navy); 
-            color: white; 
-            padding: 15px 40px; 
-            display: flex; 
-            justify-content: space-between; 
-            align-items: center;
-            border-bottom: 1px solid var(--teal);
+            background: var(--navy); color: white; padding: 15px 40px; 
+            display: flex; justify-content: space-between; align-items: center;
             box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-        }
-
-        .status-badge {
-            font-size: 10px;
-            text-transform: uppercase;
-            background: #064e3b;
-            color: #34d399;
-            padding: 4px 12px;
-            border-radius: 20px;
-            border: 1px solid #059669;
-            font-weight: bold;
         }
 
         .container { max-width: 1400px; margin: 30px auto; padding: 0 30px; }
         
-        /* Professional Upload State */
         .upload-card { 
-            background: var(--glass);
-            backdrop-filter: blur(10px);
-            padding: 80px 40px; 
-            border-radius: 24px; 
-            border: 1px solid white;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.05);
-            text-align: center; 
+            background: var(--glass); padding: 80px 40px; border-radius: 24px; 
+            border: 1px solid white; box-shadow: 0 20px 40px rgba(0,0,0,0.05); text-align: center; 
         }
 
         .custom-file-upload {
-            background: var(--navy);
-            color: white;
-            padding: 14px 28px;
-            border-radius: 8px;
-            cursor: pointer;
-            font-weight: 600;
-            display: inline-block;
-            transition: all 0.3s;
-            border: 1px solid var(--teal);
-        }
-        .custom-file-upload:hover { background: var(--teal); transform: translateY(-2px); }
-
-        /* Dashboard Metrics */
-        #statsDash { 
-            display: none; 
-            grid-template-columns: repeat(3, 1fr); 
-            gap: 25px; 
-            margin-bottom: 30px; 
-        }
-        .card { 
-            background: var(--navy); 
-            color: white; 
-            padding: 25px; 
-            border-radius: 16px; 
-            position: relative;
-            overflow: hidden;
-            border: 1px solid rgba(255,255,255,0.1);
-        }
-        .card::after {
-            content: ""; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%;
-            background: radial-gradient(circle, rgba(90,164,171,0.1) 0%, transparent 70%);
-        }
-        .card small { text-transform: uppercase; font-size: 11px; color: var(--accent); font-weight: 700; letter-spacing: 0.1em; }
-        .card div { font-size: 32px; font-weight: 800; margin-top: 8px; }
-
-        /* Main Analysis Panel */
-        .main-view { 
-            display: none; 
-            background: var(--glass); 
-            backdrop-filter: blur(10px);
-            padding: 35px; 
-            border-radius: 24px; 
-            border: 1px solid white;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.03); 
+            background: var(--navy); color: white; padding: 14px 28px; border-radius: 8px;
+            cursor: pointer; font-weight: 600; border: 1px solid var(--teal);
         }
 
-        .ctrl-row { 
-            display: grid; 
-            grid-template-columns: repeat(3, 1fr); 
-            gap: 30px; 
-            padding-bottom: 30px;
-            border-bottom: 1px solid #e5e7eb;
-            margin-bottom: 20px;
-        }
+        #statsDash { display: none; grid-template-columns: repeat(3, 1fr); gap: 25px; margin-bottom: 30px; }
+        .card { background: var(--navy); color: white; padding: 25px; border-radius: 16px; border: 1px solid rgba(255,255,255,0.1); }
+        .card div { font-size: 32px; font-weight: 800; margin-top: 8px; color: var(--accent); }
 
-        label { font-size: 11px; font-weight: 800; color: #94a3b8; text-transform: uppercase; margin-bottom: 8px; display: block; }
-        
-        select, input[type="number"] { 
-            width: 100%; padding: 12px; border-radius: 10px; border: 1px solid #d1d5db; 
-            background: #fff; font-weight: 500; color: var(--navy);
-        }
+        .main-view { display: none; background: white; padding: 35px; border-radius: 24px; box-shadow: 0 10px 30px rgba(0,0,0,0.03); }
+        .ctrl-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 30px; margin-bottom: 20px; border-bottom: 1px solid #eee; padding-bottom: 20px;}
 
-        canvas { width: 100%; height: 600px; display: block; cursor: crosshair; }
+        canvas { width: 100%; height: 600px; display: block; }
 
-        /* Enhanced Navigation */
         .nav-bar { 
             position: fixed; bottom: 0; left: 0; width: 100%; 
-            background: rgba(0, 25, 53, 0.95); 
-            backdrop-filter: blur(15px);
-            padding: 25px 0; 
-            border-top: 1px solid var(--teal); 
-            text-align: center; 
-            z-index: 1000; 
+            background: var(--navy); padding: 20px 0; text-align: center; z-index: 1000; 
         }
         .btn { 
-            background: var(--teal); 
-            color: white; 
-            padding: 14px 40px; 
-            border-radius: 12px; 
-            border: none; 
-            font-weight: 700; 
-            font-size: 13px;
-            cursor: pointer; 
-            text-transform: uppercase; 
-            letter-spacing: 0.05em;
-            transition: 0.3s;
-            box-shadow: 0 8px 20px rgba(65, 121, 126, 0.3);
+            background: var(--teal); color: white; padding: 14px 40px; border-radius: 12px; 
+            border: none; font-weight: 700; cursor: pointer; text-transform: uppercase;
         }
-        .btn:hover { background: var(--accent); transform: translateY(-2px); box-shadow: 0 12px 24px rgba(65, 121, 126, 0.5); }
     </style>
 </head>
 <body>
 
 <header>
-    <div style="font-weight: 900; font-size: 20px; letter-spacing: -0.5px;">CAMAC<span style="color:var(--accent)">PULSE</span></div>
-    <div id="status" class="status-badge">System Ready</div>
+    <div style="font-weight: 900; font-size: 20px;">CAMAC<span style="color:var(--accent)">PULSE</span></div>
+    <div id="status" style="font-size: 11px; opacity: 0.6;">ENGINE IDLE</div>
 </header>
 
-<div class="container">
+<div class="container" id="appFrame">
     <div class="upload-card" id="uploadPanel">
-        <h1 style="margin:0 0 10px 0; font-size: 32px;">Business Intelligence Engine</h1>
-        <p style="color: #64748b; margin-bottom: 30px;">Deploy your dataset for predictive trajectory mapping.</p>
+        <h1>Business Intelligence Engine</h1>
+        <p style="margin-bottom: 30px;">Deploy dataset for predictive trajectory mapping.</p>
         <label for="filePicker" class="custom-file-upload">Initialize Data Stream</label>
         <input type="file" id="filePicker" accept=".xlsx, .xls, .csv" style="display:none;">
     </div>
 
     <div id="statsDash">
-        <div class="card"><small>Operational Avg</small><div id="vAvg">0</div></div>
-        <div class="card"><small>Momentum</small><div id="vTrend">---</div></div>
-        <div class="card"><small>Predictive Forecast</small><div id="vFore">0</div></div>
+        <div class="card"><small>OPERATIONAL AVG</small><div id="vAvg">0</div></div>
+        <div class="card"><small>MOMENTUM</small><div id="vTrend">---</div></div>
+        <div class="card"><small>PREDICTIVE FORECAST</small><div id="vFore">0</div></div>
     </div>
 
     <div class="main-view" id="mainApp">
         <div class="ctrl-row">
-            <div><label>Temporal Axis (X)</label><select id="pickX" onchange="draw()"></select></div>
-            <div><label>Metric Volume (Y)</label><select id="pickY" onchange="draw()"></select></div>
+            <div><label>Temporal Axis</label><select id="pickX" onchange="draw()"></select></div>
+            <div><label>Metric Volume</label><select id="pickY" onchange="draw()"></select></div>
             <div><label>Performance Target</label><input type="number" id="pickGoal" oninput="draw()" placeholder="0.00"></div>
         </div>
         <canvas id="pulseCanvas"></canvas>
@@ -183,35 +91,21 @@
 </div>
 
 <div class="nav-bar">
-    <button class="btn" onclick="window.open(window.location.href, '_blank')">Expand to Full Intelligence View ↗</button>
+    <button class="btn" id="fullBtn" onclick="toggleFull()">Maximize Intelligence View ↗</button>
 </div>
 
 <script>
     const picker = document.getElementById('filePicker');
     let dataSet = [];
 
-    window.addEventListener('load', () => {
-        const saved = sessionStorage.getItem('pulseData');
-        if (saved) {
-            dataSet = JSON.parse(saved);
-            startApp();
-        }
-    });
-
     picker.addEventListener('change', (e) => {
         const file = e.target.files[0];
         if (!file) return;
-
         const reader = new FileReader();
         reader.onload = (f) => {
-            try {
-                const workbook = XLSX.read(new Uint8Array(f.target.result), {type: 'array'});
-                dataSet = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]]);
-                if (dataSet.length > 0) {
-                    sessionStorage.setItem('pulseData', JSON.stringify(dataSet));
-                    startApp();
-                }
-            } catch(err) { alert("Format Error: Ensure standard Excel/CSV encoding."); }
+            const workbook = XLSX.read(new Uint8Array(f.target.result), {type: 'array'});
+            dataSet = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]]);
+            if (dataSet.length > 0) startApp();
         };
         reader.readAsArrayBuffer(file);
     });
@@ -223,13 +117,29 @@
         keys.forEach(k => { sx.add(new Option(k,k)); sy.add(new Option(k,k)); });
         if(keys.length > 1) sy.selectedIndex = 1;
 
-        document.getElementById('status').innerText = "Data Live";
-        document.getElementById('status').style.background = "#064e3b";
+        document.getElementById('status').innerText = "DATA ACTIVE";
         document.getElementById('uploadPanel').style.display = 'none';
         document.getElementById('statsDash').style.display = 'grid';
         document.getElementById('mainApp').style.display = 'block';
         draw();
     }
+
+    // --- THE NEW FULLSCREEN LOGIC ---
+    function toggleFull() {
+        const elem = document.getElementById('appFrame');
+        if (!document.fullscreenElement) {
+            elem.requestFullscreen().catch(err => {
+                alert(`Error: ${err.message}`);
+            });
+            document.getElementById('fullBtn').innerText = "Exit Full View";
+        } else {
+            document.exitFullscreen();
+            document.getElementById('fullBtn').innerText = "Maximize Intelligence View ↗";
+        }
+    }
+
+    // Redraw chart when window size changes (fullscreen)
+    window.addEventListener('resize', () => { if(dataSet.length > 0) draw(); });
 
     function draw() {
         const canvas = document.getElementById('pulseCanvas'), ctx = canvas.getContext('2d');
@@ -261,44 +171,34 @@
 
         ctx.clearRect(0,0,w,h);
 
-        // Y-Axis Grid
-        ctx.fillStyle = "#94a3b8"; ctx.font = "bold 11px sans-serif"; ctx.textAlign = "right";
-        ctx.strokeStyle = "#e2e8f0"; ctx.lineWidth = 1;
+        // Y-Axis
+        ctx.strokeStyle = "#e2e8f0"; ctx.lineWidth = 1; ctx.fillStyle = "#94a3b8"; ctx.font = "bold 11px sans-serif"; ctx.textAlign = "right";
         for(let i=0; i<=5; i++) {
             const val = Math.round(max/5*i), y = (h-pB)-(val/max*(h-pB-pT));
             ctx.beginPath(); ctx.moveTo(pL, y); ctx.lineTo(w-pR, y); ctx.stroke();
             ctx.fillText(val.toLocaleString(), pL-15, y+4);
         }
 
-        // Target Line (Red)
+        // Target Line
         if(goal > 0) {
             const gy = (h-pB)-(goal/max*(h-pB-pT));
-            ctx.strokeStyle = "#e11d48"; ctx.lineWidth = 3;
+            ctx.strokeStyle = "#e11d48"; ctx.lineWidth = 2;
             ctx.beginPath(); ctx.moveTo(pL, gy); ctx.lineTo(w-pR, gy); ctx.stroke();
-            ctx.fillStyle = "#e11d48"; ctx.textAlign="left"; ctx.font = "bold 10px sans-serif";
-            ctx.fillText("CRITICAL TARGET", w-pR+15, gy+4);
+            ctx.fillStyle = "#e11d48"; ctx.textAlign="left"; ctx.fillText("PERFORMANCE TARGET", w-pR+15, gy+4);
         }
 
-        // Area Gradient Fill
-        const grad = ctx.createLinearGradient(0, pT, 0, h-pB);
-        grad.addColorStop(0, "rgba(65, 121, 126, 0.2)");
-        grad.addColorStop(1, "rgba(65, 121, 126, 0)");
-        ctx.fillStyle = grad;
-        ctx.beginPath();
-        ctx.moveTo(pL, h-pB);
-        pts.forEach((p, i) => ctx.lineTo(pL+(i*step), (h-pB)-(p.y/max*(h-pB-pT))));
-        ctx.lineTo(pL+((n-1)*step), h-pB);
-        ctx.fill();
-
-        // Forecast Projection
+        // Forecast
         const fy = (h-pB)-((m*n+b)/max*(h-pB-pT)), fx = pL+(n*step);
-        ctx.setLineDash([8,6]); ctx.strokeStyle = "#94a3b8"; ctx.lineWidth = 2;
-        ctx.beginPath();
-        ctx.moveTo(pL+((n-1)*step), (h-pB)-(pts[n-1].y/max*(h-pB-pT)));
+        ctx.setLineDash([5,5]); ctx.strokeStyle = "#94a3b8"; 
+        ctx.beginPath(); ctx.moveTo(pL+((n-1)*step), (h-pB)-(pts[n-1].y/max*(h-pB-pT)));
         ctx.lineTo(fx, fy); ctx.stroke();
         ctx.setLineDash([]);
+        
+        ctx.fillStyle = "var(--navy)"; ctx.beginPath(); ctx.arc(fx, fy, 8, 0, 7); ctx.fill();
+        ctx.fillStyle = "var(--navy)"; ctx.font = "800 13px sans-serif"; ctx.textAlign="left";
+        ctx.fillText("PREDICTIVE ANALYSIS", fx+15, fy+5);
 
-        // Main Line
+        // Line
         ctx.strokeStyle = "var(--teal)"; ctx.lineWidth = 5; ctx.lineJoin = "round";
         ctx.beginPath();
         pts.forEach((p, i) => {
@@ -307,24 +207,14 @@
         });
         ctx.stroke();
 
-        // Data Points (Glow)
+        // Points
         pts.forEach((p, i) => {
             const x = pL+(i*step), y = (h-pB)-(p.y/max*(h-pB-pT));
-            ctx.fillStyle = "white"; ctx.shadowBlur = 10; ctx.shadowColor = "rgba(0,0,0,0.2)";
-            ctx.beginPath(); ctx.arc(x, y, 5, 0, 7); ctx.fill();
+            ctx.fillStyle = "white"; ctx.beginPath(); ctx.arc(x, y, 5, 0, 7); ctx.fill();
             ctx.strokeStyle = "var(--teal)"; ctx.lineWidth = 2; ctx.stroke();
-            ctx.shadowBlur = 0;
-
             ctx.save(); ctx.translate(x, h-pB+30); ctx.rotate(Math.PI/4);
-            ctx.fillStyle = "#64748b"; ctx.textAlign="left"; ctx.font="700 10px sans-serif";
-            ctx.fillText(p.x, 0, 0); ctx.restore();
+            ctx.fillStyle = "#64748b"; ctx.textAlign="left"; ctx.fillText(p.x, 0, 0); ctx.restore();
         });
-
-        // Forecast Point Final
-        ctx.fillStyle = "var(--navy)"; ctx.beginPath(); ctx.arc(fx, fy, 8, 0, 7); ctx.fill();
-        ctx.strokeStyle = "var(--accent)"; ctx.lineWidth = 3; ctx.stroke();
-        ctx.fillStyle = "var(--navy)"; ctx.font = "800 14px sans-serif"; ctx.textAlign="left";
-        ctx.fillText("PREDICTIVE ANALYSIS", fx+20, fy+5);
     }
 </script>
 </body>
