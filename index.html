@@ -12,42 +12,39 @@
             --card-bg: #ffffff; --border: #e2e8f0; --ctrl-bg: #f8fafc;
             --card-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05);
         }
-
         [data-theme="dark"] {
             --primary: #f8fafc; --accent: #60a5fa; --text-main: #f1f5f9;
             --text-muted: #94a3b8; --bg-subtle: #020617; --card-bg: #1e293b;
             --border: #334155; --ctrl-bg: #0f172a;
             --card-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3);
         }
-
         body { font-family: 'Inter', system-ui, sans-serif; background: var(--bg-subtle); color: var(--text-main); margin: 0; padding-bottom: 120px; transition: all 0.3s; }
         header { background: var(--card-bg); padding: 1rem 2rem; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); }
         .container { max-width: 1600px; margin: 2rem auto; padding: 0 2rem; }
         .upload-card { background: var(--card-bg); padding: 60px; border-radius: 16px; box-shadow: var(--card-shadow); border: 2px dashed var(--border); text-align: center; }
-        
-        #statsDash { display: none; grid-template-columns: repeat(4, 1fr); gap: 1.5rem; margin-bottom: 1.5rem; }
+        #statsDash { display: none; grid-template-columns: repeat(5, 1fr); gap: 1.5rem; margin-bottom: 1.5rem; }
         .card { background: var(--card-bg); padding: 1.25rem; border-radius: 12px; box-shadow: var(--card-shadow); border: 1px solid var(--border); }
         .card-label { font-size: 0.65rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 0.5rem; letter-spacing: 0.05em;}
-        .card-val { font-size: 1.6rem; font-weight: 800; }
-
+        .card-val { font-size: 1.4rem; font-weight: 800; }
         .main-view { display: none; background: var(--card-bg); padding: 1.5rem; border-radius: 16px; box-shadow: var(--card-shadow); border: 1px solid var(--border); }
         .ctrl-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.5rem; background: var(--ctrl-bg); padding: 1.5rem; border-radius: 12px; margin-bottom: 1.5rem; border: 1px solid var(--border); }
         label { font-size: 0.75rem; font-weight: 700; color: var(--text-muted); display: block; margin-bottom: 5px; }
         select, input { width: 100%; padding: 0.75rem; border-radius: 8px; border: 1px solid var(--border); background: var(--card-bg); color: var(--text-main); font-size: 0.85rem; }
-
         canvas { width: 100%; height: 600px; display: block; }
-
         .nav-bar { position: fixed; bottom: 0; left: 0; width: 100%; background: var(--card-bg); border-top: 1px solid var(--border); padding: 1.25rem 0; text-align: center; z-index: 1000; }
         .btn { background: var(--accent); color: white; padding: 12px 24px; border-radius: 8px; border: none; font-weight: 600; cursor: pointer; transition: all 0.2s; font-size: 0.85rem; }
         .btn-outline { background: transparent; color: var(--text-main); border: 1px solid var(--border); margin-right: 8px; }
-
-        @media print { .nav-bar, .ctrl-row, #uploadPanel, #themeBtn { display: none !important; } }
+        .btn-danger { background: transparent; color: var(--danger); border: 1px solid var(--danger); margin-left: 10px; }
+        .btn-danger:hover { background: var(--danger); color: white; }
     </style>
 </head>
 <body data-theme="light">
 
 <header>
-    <strong>CamacPulse <span style="color:var(--accent)">Intelligence</span></strong>
+    <div>
+        <strong>CamacPulse <span style="color:var(--accent)">Intelligence</span></strong>
+        <button id="resetHeader" class="btn btn-danger" style="padding: 4px 10px; font-size: 10px; display:none;" onclick="clearData()">RESET DATA</button>
+    </div>
     <div style="display:flex; align-items:center; gap: 15px;">
         <div id="themeBtn" style="cursor:pointer; font-size: 0.75rem; font-weight:700; color:var(--text-muted);" onclick="toggleTheme()">NIGHT MODE</div>
         <button class="btn btn-outline" style="padding: 6px 12px; font-size: 11px;" onclick="window.print()">PRINT</button>
@@ -56,32 +53,34 @@
 
 <div class="container">
     <div class="upload-card" id="uploadPanel">
-        <h2 style="margin:0 0 10px 0;">Analytical Engine</h2>
-        <p style="color: var(--text-muted);">Upload XLSX/CSV to generate trajectory confidence models.</p>
+        <h2>Analytical Engine</h2>
+        <p style="color: var(--text-muted);">Upload XLSX/CSV to generate trajectory models.</p>
         <input type="file" id="filePicker" accept=".xlsx, .xls, .csv">
     </div>
 
     <div id="statsDash">
         <div class="card"><div class="card-label">Avg. Performance</div><div class="card-val" id="vAvg">0</div></div>
         <div class="card"><div class="card-label">Trajectory Slope</div><div class="card-val" id="vTrend">---</div></div>
-        <div class="card"><div class="card-label">Trend Confidence ($R^2$)</div><div class="card-val" id="vConf">0%</div></div>
-        <div class="card"><div class="card-label">Horizon Projection</div><div class="card-val" id="vFore">0</div></div>
+        <div class="card"><div class="card-label">Confidence ($R^2$)</div><div class="card-val" id="vConf">0%</div></div>
+        <div class="card"><div class="card-label">Data Completeness</div><div class="card-val" id="vComp">0%</div></div>
+        <div class="card"><div class="card-label">Projection</div><div class="card-val" id="vFore">0</div></div>
     </div>
 
     <div class="main-view" id="mainApp">
         <div class="ctrl-row">
-            <div><label>X-Labels</label><select id="pickX" onchange="draw()"></select></div>
-            <div><label>Y-Values</label><select id="pickY" onchange="draw()"></select></div>
+            <div><label>X-Labels (Dimension)</label><select id="pickX" onchange="draw()"></select></div>
+            <div><label>Y-Values (Metric)</label><select id="pickY" onchange="draw()"></select></div>
             <div><label>KPI Target</label><input type="number" id="pickGoal" oninput="draw()" value="0"></div>
-            <div><label>Forecast Steps</label><input type="number" id="pickSteps" oninput="draw()" value="3" min="1" max="12"></div>
+            <div><label>Continuation (Steps)</label><input type="number" id="pickSteps" oninput="draw()" value="3" min="1" max="12"></div>
         </div>
         <canvas id="pulseCanvas"></canvas>
     </div>
 </div>
 
-<div class="nav-bar">
+<div class="nav-bar" id="bottomNav" style="display:none;">
     <button class="btn btn-outline" onclick="exportData()">Export Data</button>
     <button class="btn btn-outline" onclick="exportChart()">Save PNG</button>
+    <button class="btn btn-outline" onclick="clearData()">Clear All</button>
     <button class="btn" onclick="window.open(window.location.href, '_blank')">Expand Workspace ↗</button>
 </div>
 
@@ -94,6 +93,10 @@
         b.setAttribute('data-theme', isDark ? 'light' : 'dark');
         document.getElementById('themeBtn').innerText = isDark ? 'NIGHT MODE' : 'LIGHT MODE';
         if(dataSet.length) draw();
+    }
+
+    function clearData() {
+        if(confirm("Reset workspace?")) { localStorage.removeItem('pulseData'); location.reload(); }
     }
 
     window.addEventListener('load', () => {
@@ -123,6 +126,8 @@
         document.getElementById('uploadPanel').style.display = 'none';
         document.getElementById('statsDash').style.display = 'grid';
         document.getElementById('mainApp').style.display = 'block';
+        document.getElementById('bottomNav').style.display = 'block';
+        document.getElementById('resetHeader').style.display = 'inline-block';
         draw();
     }
 
@@ -139,77 +144,68 @@
         })).filter(p => !isNaN(p.y));
 
         const n = pts.length, ys = pts.map(p => p.y);
-        
-        // Regression Math
         let sX=0, sY=0, sXY=0, sXX=0, sYY=0;
         ys.forEach((y,x) => { sX+=x; sY+=y; sXY+=x*y; sXX+=x*x; sYY+=y*y; });
         const m = (n*sXY - sX*sY)/(n*sXX - sX*sX) || 0, b = (sY - m*sX)/n;
-
-        // R-Squared (Confidence) Calculation
         const rNum = (n * sXY) - (sX * sY);
         const rDen = Math.sqrt(((n * sXX) - (sX * sX)) * ((n * sYY) - (sY * sY)));
         const r2 = rDen === 0 ? 0 : Math.pow(rNum / rDen, 2);
 
-        // UI Updates
         document.getElementById('vAvg').innerText = Math.round(ys.reduce((a,b)=>a+b,0)/n).toLocaleString();
         document.getElementById('vFore').innerText = Math.round(m*(n + steps - 1)+b).toLocaleString();
         document.getElementById('vConf').innerText = Math.round(r2 * 100) + "%";
-        document.getElementById('vConf').style.color = r2 > 0.7 ? "var(--success)" : r2 > 0.4 ? "var(--warning)" : "var(--danger)";
+        document.getElementById('vComp').innerText = Math.round((n / (n + steps)) * 100) + "%";
         const t = document.getElementById('vTrend');
         t.innerText = (m > 0 ? "+" : "") + Math.round(m); t.style.color = m > 0 ? "var(--success)" : "var(--danger)";
 
         const dpr = 2;
         canvas.width = canvas.offsetWidth * dpr; canvas.height = canvas.offsetHeight * dpr;
         ctx.scale(dpr, dpr);
-        const w = canvas.offsetWidth, h = canvas.offsetHeight;
-        const pL = 80, pR = 150, pT = 60, pB = 100;
-        const finalProj = m * (n + steps - 1) + b;
-        const max = Math.max(...ys, finalProj, goal) * 1.3;
+        const w = canvas.offsetWidth, h = canvas.offsetHeight, pL = 100, pR = 150, pT = 60, pB = 120;
+        const max = Math.max(...ys, m*(n+steps-1)+b, goal) * 1.3;
         const stepSize = (w - pL - pR) / (n + steps - 1);
 
         ctx.fillStyle = isDark ? "#1e293b" : "white"; ctx.fillRect(0,0,w,h);
 
-        // Grid
-        ctx.strokeStyle = isDark ? "#334155" : "#f1f5f9"; ctx.textAlign = "right"; ctx.fillStyle = "#94a3b8";
+        // Axis Titles
+        ctx.fillStyle = isDark ? "#94a3b8" : "#64748b";
+        ctx.font = "bold 12px sans-serif";
+        ctx.textAlign = "center";
+        ctx.fillText(xKey.toUpperCase() + " (CONTINUATION)", (w-pL-pR)/2 + pL, h - 20);
+        
+        ctx.save();
+        ctx.translate(30, (h-pT-pB)/2 + pT);
+        ctx.rotate(-Math.PI/2);
+        ctx.fillText(yKey.toUpperCase() + " (COMPLETENESS)", 0, 0);
+        ctx.restore();
+
+        // Grid & Labels
+        ctx.strokeStyle = isDark ? "#334155" : "#f1f5f9"; ctx.textAlign = "right"; ctx.font = "10px sans-serif";
         for(let i=0; i<=5; i++) {
             const val = Math.round(max/5*i), y = (h-pB)-(val/max*(h-pB-pT));
             ctx.beginPath(); ctx.moveTo(pL, y); ctx.lineTo(w-pR + (steps * stepSize), y); ctx.stroke();
             ctx.fillText(val.toLocaleString(), pL-15, y+4);
         }
 
-        // Regression Confidence Shading (Subtle Glow)
-        ctx.fillStyle = isDark ? "rgba(96, 165, 250, 0.05)" : "rgba(59, 130, 246, 0.05)";
-        ctx.beginPath();
-        ctx.moveTo(pL, (h-pB)-(b/max*(h-pB-pT)));
-        ctx.lineTo(pL + (n+steps-1)*stepSize, (h-pB)-(finalProj/max*(h-pB-pT)) - (20 * (1-r2)));
-        ctx.lineTo(pL + (n+steps-1)*stepSize, (h-pB)-(finalProj/max*(h-pB-pT)) + (20 * (1-r2)));
-        ctx.fill();
-
-        // Main Data Line
+        // Data Line
         ctx.strokeStyle = isDark ? "#60a5fa" : "#0f172a"; ctx.lineWidth = 3; ctx.beginPath();
         pts.forEach((p, i) => {
             const x = pL+(i*stepSize), y = (h-pB)-(p.y/max*(h-pB-pT));
             if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
-            ctx.fillStyle = isDark ? "#94a3b8" : "#1e293b"; ctx.textAlign = "center"; ctx.font = "bold 9px sans-serif";
-            ctx.fillText(Math.round(p.y).toLocaleString(), x, y - 12);
             ctx.save(); ctx.translate(x, h-pB+30); ctx.rotate(Math.PI/4); ctx.textAlign="left"; ctx.fillText(p.x, 0, 0); ctx.restore();
         });
         ctx.stroke();
 
-        // Forecast Line
+        // Continuation Forecast
         ctx.setLineDash([6,6]); ctx.strokeStyle = "var(--accent)"; ctx.beginPath();
         ctx.moveTo(pL + (n-1)*stepSize, (h-pB)-(pts[n-1].y/max*(h-pB-pT)));
         for(let s=1; s<=steps; s++) {
             const px = pL + (n-1+s)*stepSize, py = (h-pB)-((m*(n-1+s)+b)/max*(h-pB-pT));
-            ctx.lineTo(px, py); ctx.stroke(); ctx.setLineDash([]);
-            ctx.fillStyle = "var(--accent)"; ctx.beginPath(); ctx.arc(px, py, 5, 0, 7); ctx.fill();
-            ctx.fillText(Math.round(m*(n-1+s)+b).toLocaleString(), px, py - 12);
-            ctx.setLineDash([6,6]); ctx.moveTo(px, py);
+            ctx.lineTo(px, py); ctx.stroke();
+            ctx.fillStyle = "var(--accent)"; ctx.beginPath(); ctx.arc(px, py, 4, 0, 7); ctx.fill();
         }
     }
-
-    function exportChart() { const c = document.getElementById('pulseCanvas'); const l = document.createElement('a'); l.download = `Pulse_Analysis.png`; l.href = c.toDataURL('image/png', 1.0); l.click(); }
-    function exportData() { if(!dataSet.length) return; const ws = XLSX.utils.json_to_sheet(dataSet); const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "Analysis"); XLSX.writeFile(wb, `Data_Export.xlsx`); }
+    function exportChart() { const c = document.getElementById('pulseCanvas'); const l = document.createElement('a'); l.download = `Pulse.png`; l.href = c.toDataURL(); l.click(); }
 </script>
 </body>
 </html>
